@@ -1,0 +1,51 @@
+<?php
+defined('BASEPATH') or exit('No direct script access allowed');
+
+class UserAnswerModel extends CI_Model
+{
+    private $_table = 'user_answers';
+
+    public function saveAnswer($user_tryout_id, $question_id, $answer, $is_unsure = 0)
+    {
+        $data = [
+            'user_tryout_id' => $user_tryout_id,
+            'question_id' => $question_id,
+            'answer' => $answer,
+            'is_unsure' => $is_unsure,
+            'created_at' => date('Y-m-d H:i:s')
+        ];
+
+        $existing = $this->db->where('user_tryout_id', $user_tryout_id)
+            ->where('question_id', $question_id)
+            ->get($this->_table)
+            ->row();
+
+        if ($existing) {
+            $this->db->where('id', $existing->id)->update($this->_table, $data);
+        } else {
+            $this->db->insert($this->_table, $data);
+        }
+    }
+
+    public function getAnswers($user_tryout_id)
+    {
+        return $this->db->where('user_tryout_id', $user_tryout_id)
+            ->get($this->_table)
+            ->result_array();
+    }
+
+	public function getAnswer($user_tryout_id, $question_id)
+{
+    return $this->db->where('user_tryout_id', $user_tryout_id)
+                    ->where('question_id', $question_id)
+                    ->get('user_answers')
+                    ->row();
+}
+
+    public function markUnsure($user_tryout_id, $question_id, $is_unsure)
+    {
+        $this->db->where('user_tryout_id', $user_tryout_id)
+            ->where('question_id', $question_id)
+            ->update($this->_table, ['is_unsure' => $is_unsure]);
+    }
+}
