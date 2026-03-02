@@ -34,6 +34,32 @@ class Question extends AppBackend
         $this->template->render();
     }
 
+    public function form($id = null)
+    {
+        $subjects = $this->SubjectModel->getAll([], 'name', 'asc');
+        $list_subject = $this->init_list($subjects, 'id', 'name');
+        
+        $data = array(
+            'app' => $this->app(),
+            'main_js' => $this->load_main_js('question/views/main_form.js.php',true),
+            'card_title' => ($id) ? 'Ubah Soal' : 'Tambah Soal',
+            'list_subject' => $list_subject,
+            'question_data' => null
+        );
+        
+        // Jika edit, ambil data question
+        if ($id) {
+            $question = $this->QuestionModel->getById($id);
+            if ($question) {
+                $data['question_data'] = $question;
+            }
+        }
+        
+        $this->template->set('title', $data['card_title'] . ' | ' . $data['app']->app_name, TRUE);
+        $this->template->load_view('form_page', $data, TRUE);
+        $this->template->render();
+    }
+
     public function ajax_get_all()
     {
         $this->handle_ajax_request();

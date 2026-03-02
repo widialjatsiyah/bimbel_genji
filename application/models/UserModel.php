@@ -104,6 +104,38 @@ class UserModel extends CI_Model
 		);
 	}
 
+	
+	public function rules_register_student()
+	{
+		return array(
+			[
+				'field' => 'nama_lengkap',
+				'label' => 'Nama Lengkap',
+				'rules' => 'required|trim'
+			],
+			[
+				'field' => 'email',
+				'label' => 'Email',
+				'rules' => 'required|trim|valid_email|is_unique[user.email]'
+			],
+			[
+				'field' => 'username',
+				'label' => 'Username',
+				'rules' => 'required|trim|min_length[5]|max_length[12]|is_unique[user.username]|alpha_numeric'
+			],
+			[
+				'field' => 'password',
+				'label' => 'Password',
+				'rules' => 'required|matches[password_confirm]'
+			],
+			[
+				'field' => 'password_confirm',
+				'label' => 'Password Confirm',
+				'rules' => 'required'
+			]
+		);
+	}
+
 	private function _email_exist($email, $id)
 	{
 		$id = (!IS_NULL($id)) ? $id : 0;
@@ -335,5 +367,11 @@ class UserModel extends CI_Model
 	public function countByRole($role)
 	{
 		return $this->db->where('role', $role)->count_all_results('user');
+	}
+
+	public function insertData($data)
+	{
+		$this->db->insert('user', $data);
+		return $this->db->insert_id();
 	}
 }

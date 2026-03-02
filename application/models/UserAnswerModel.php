@@ -48,4 +48,16 @@ class UserAnswerModel extends CI_Model
             ->where('question_id', $question_id)
             ->update($this->_table, ['is_unsure' => $is_unsure]);
     }
+
+	public function getAnswersByUserTryoutAndSession($user_tryout_id, $session_id)
+    {
+        return $this->db->select('ua.*')
+                        ->from('user_answers ua')
+                        ->join('tryout_questions tq', 'tq.question_id = ua.question_id')
+                        ->join('tryout_sessions ts', 'ts.id = tq.tryout_session_id')
+                        ->where('ua.user_tryout_id', $user_tryout_id)
+                        ->where('ts.id', $session_id)
+                        ->get()
+                        ->result_array();
+    }
 }

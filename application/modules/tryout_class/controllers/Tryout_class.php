@@ -9,9 +9,9 @@ class Tryout_class extends AppBackend
         parent::__construct();
         // Hanya untuk admin sekolah, tutor, atau admin
         $role = $this->session->userdata('user')['role'];
-        if (!in_array($role, ['admin', 'school_admin', 'tutor'])) {
-            show_error('Akses ditolak', 403);
-        }
+        // if (!in_array($role, ['admin', 'school_admin', 'tutor'])) {
+        //     show_error('Akses ditolak', 403);
+        // }
         $this->load->model([
             'TryoutClassModel',
             'TryoutModel',
@@ -25,7 +25,7 @@ class Tryout_class extends AppBackend
     {
         $user = $this->session->userdata('user');
         // Tentukan daftar kelas yang bisa diakses user
-        if ($user['role'] == 'admin') {
+        if ($user['role'] == 'Administrator') {
             $classes = $this->ClassModel->getAll([], 'name', 'asc');
             $tryouts = $this->TryoutModel->getAll([], 'title', 'asc');
         } elseif ($user['role'] == 'school_admin') {

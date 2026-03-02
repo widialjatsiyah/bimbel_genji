@@ -1,5 +1,5 @@
 <div class="modal fade" id="modal-form-question" data-backdrop="static" data-keyboard="false" style="display: none;">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title pull-left">
@@ -81,7 +81,7 @@
 
                     <div class="form-group">
                         <label required>Teks Soal</label>
-                        <textarea name="question_text" class="form-control question-question_text" rows="4" placeholder="Tulis soal di sini..." required></textarea>
+                        <textarea name="question_text" class="form-control question-question_text tinymce-init" rows="4" placeholder="Tulis soal di sini..." required></textarea>
                         <i class="form-group__bar"></i>
                     </div>
 

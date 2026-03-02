@@ -3,7 +3,7 @@
 
 <div id="layoutSidenav_content">
     <main>
-        <header class="page-header page-header-dark bg-img-cover pb-10" style="background-color : rgba(244, 122, 31, 1)">
+        <header class="page-header page-header-dark bg-img-cover pb-10" style="background-color : #0066cc">
             <div class="container-xl px-4">
                 <div class="page-header-content <?= ($app->is_mobile) ? 'pt-0' : 'pt-4' ?>">
                     <?php if (!$app->is_mobile) : ?>

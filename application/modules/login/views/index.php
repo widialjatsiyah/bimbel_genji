@@ -56,8 +56,8 @@
     <div class="login">
       <div class="login__block active" style="max-width: 400px;">
         <div class="login__block__header">
-          <img src="<?php echo base_url('themes/_public/img/logo/logo.png') ?>" />
-          <span style="font-weight: 500;">PT Macakal Pangan Sejahtera</span>
+          <img src="<?php echo base_url('directory/settings/7f7ac8b44baa13fb617017560d17f87a.jpg') ?>" />
+          <span style="font-weight: 500;">Generasi Jenius</span>
         </div>
 
         <div class="login__block__body">
@@ -77,6 +77,10 @@
             Masuk
             <i class="zmdi zmdi-long-arrow-right"></i>
           </button>
+        </div>
+				<div class="mt-4">
+          <!-- <a href="<?php echo base_url('login/forgot_password') ?>">Lupa Password?</a> -->
+          <a href="<?php echo base_url() ?>"><i class="zmdi zmdi-long-arrow-left"></i> Back To Home</a>
         </div>
 
         <div style="border-top: 1px solid #eceff1; padding: 20px 10px; color: #999;" class="bg-light mt-4">

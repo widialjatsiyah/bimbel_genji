@@ -17,6 +17,8 @@ class PackageItemModel extends CI_Model
     public function removeItem($id)
     {
         $this->db->delete($this->_table, ['id' => $id]);
+		return ['status' => true, 'data' => 'Item berhasil dihapus.'];
+
     }
 
     public function removeByPackage($package_id)

@@ -106,4 +106,33 @@ class TryoutSessionModel extends CI_Model
 			->get('tryout_sessions')
 			->result();
 	}
+
+	 public function getFirstSession($tryout_id)
+    {
+        return $this->db->where('tryout_id', $tryout_id)
+                        ->order_by('session_order', 'asc')
+                        ->limit(1)
+                        ->get($this->_table)
+                        ->row();
+    }
+
+    /**
+     * Mendapatkan semua sesi berdasarkan tryout
+     */
+   
+
+    /**
+     * Mendapatkan sesi berikutnya setelah sesi tertentu
+     */
+    public function getNextSession($tryout_id, $current_session_id)
+    {
+        $current = $this->db->where('id', $current_session_id)->get($this->_table)->row();
+        if (!$current) return null;
+        return $this->db->where('tryout_id', $tryout_id)
+                        ->where('session_order >', $current->session_order)
+                        ->order_by('session_order', 'asc')
+                        ->limit(1)
+                        ->get($this->_table)
+                        ->row();
+    }
 }

@@ -32,7 +32,7 @@
         success: function(response) {
           if (response.status === true) {
             notify(response.data, "success");
-            window.location.href = "<?php echo base_url() ?>";
+            window.location.href = "<?php echo base_url('dashboard') ?>";
           } else {
             notify(response.data, "danger");
             $("#" + _form + " .login-password").val("").focus();

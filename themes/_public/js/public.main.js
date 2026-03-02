@@ -168,11 +168,11 @@ function readUploadMultipleDocURLXs(input) {
 tinymce.init({
 	selector: "textarea.tinymce-init",
 	plugins:
-		"print preview importcss searchreplace autolink autosave save directionality visualblocks visualchars fullscreen image link media codesample table charmap hr pagebreak nonbreaking anchor toc insertdatetime advlist lists wordcount imagetools textpattern noneditable help charmap quickbars emoticons",
+		"eqneditor print preview importcss searchreplace autolink autosave save directionality visualblocks visualchars fullscreen image link media codesample table charmap hr pagebreak nonbreaking anchor toc insertdatetime advlist lists wordcount imagetools textpattern noneditable help charmap quickbars emoticons",
 	imagetools_cors_hosts: ["picsum.photos"],
 	menubar: "file edit view insert format tools table tc",
 	toolbar:
-		"undo redo | bold italic underline strikethrough | fontselect fontsizeselect formatselect | alignleft aligncenter alignright alignjustify | outdent indent |  numlist bullist checklist | forecolor backcolor casechange removeformat | pagebreak | charmap emoticons | fullscreen  preview save print | insertfile image media template link anchor codesample | a11ycheck ltr rtl",
+		"undo redo | bold italic underline strikethrough | fontselect fontsizeselect formatselect | alignleft aligncenter alignright alignjustify | outdent indent |  numlist bullist checklist | forecolor backcolor casechange removeformat | pagebreak | charmap emoticons | fullscreen  preview save print | insertfile image media template link anchor codesample eqneditor | a11ycheck ltr rtl",
 	// autosave_ask_before_unload: true,
 	autosave_interval: "30s",
 	autosave_prefix: "{path}{query}-{id}-",
@@ -189,7 +189,7 @@ tinymce.init({
 	height:
 		$(".tinymce-init").attr("data-height") !== undefined
 			? parseInt($(".tinymce-init").attr("data-height"))
-			: 600,
+			: 300,
 	image_caption: true,
 	quickbars_selection_toolbar:
 		"bold italic | quicklink h2 h3 blockquote quickimage quicktable",

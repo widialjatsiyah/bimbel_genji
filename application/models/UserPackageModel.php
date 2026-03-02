@@ -136,4 +136,20 @@ class UserPackageModel extends CI_Model
 		$result = $this->db->get()->result();
 		return array_column($result, 'item_id');
 	}
+
+	 public function getActiveByUser($user_id)
+    {
+        return $this->db->where('user_id', $user_id)
+                        ->where('status', 'active')
+                        ->where('end_date >=', date('Y-m-d'))
+                        ->order_by('end_date', 'desc')
+                        ->get($this->_table)
+                        ->row();
+    }
+
+	 public function insertArray($data)
+    {
+        $this->db->insert($this->_table, $data);
+        return $this->db->insert_id();
+    }
 }

@@ -65,7 +65,7 @@
                     <input type="hidden" name="type" id="item-type">
                     <div class="form-group">
                         <label>Pilih Item</label>
-                        <select name="item_id" id="item-select" class="form-control select2" style="width: 100%;"></select>
+                        <select name="item_id" id="item-select" class="form-control select2" ></select>
                     </div>
                 </form>
             </div>

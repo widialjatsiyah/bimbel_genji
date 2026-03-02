@@ -90,6 +90,12 @@ class QuestionModel extends CI_Model
 		return $this->db->get($this->_table)->result();
 	}
 
+	public function getById($id)
+	{
+		$this->db->where('id', $id);
+		return $this->db->get($this->_table)->row();
+	}
+
 	public function getDetail($params = array())
 	{
 		$this->db->where($params);

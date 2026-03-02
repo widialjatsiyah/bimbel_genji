@@ -9,7 +9,7 @@ class AppBackend extends MX_Controller
 {
     private $_charName = 'IEMED Support | PT. KAH';
     private $_permittedChars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    private $_specialRoute = array('login', 'form');
+    private $_specialRoute = array('login', 'form', 'register');
 
     function __construct()
     {

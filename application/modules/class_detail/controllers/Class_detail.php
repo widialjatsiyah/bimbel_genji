@@ -7,9 +7,9 @@ class Class_detail extends AppBackend
     public function __construct()
     {
         parent::__construct();
-        if ($this->session->userdata('user')['role'] != 'student') {
-            show_error('Akses ditolak', 403);
-        }
+        // if ($this->session->userdata('user')['role'] != 'student') {
+        //     show_error('Akses ditolak', 403);
+        // }
         $this->load->model(['ClassModel', 'ClassMeetingModel', 'MeetingMaterialModel', 'MeetingQuizModel', 'UserPackageModel']);
     }
 

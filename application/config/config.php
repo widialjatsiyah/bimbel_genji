@@ -460,7 +460,10 @@ $config['csrf_token_name'] = 'smi_iemedsupport_cpcsrf';
 $config['csrf_cookie_name'] = 'smi_iemedsupport_csrfcookie';
 $config['csrf_expire'] = 7200;
 $config['csrf_regenerate'] = FALSE;
-$config['csrf_exclude_uris'] = array();
+$config['csrf_exclude_uris'] = array(
+    'user_tryout/ajax_mark_unsure',
+    'user_tryout/ajax_save_answer'
+);
 
 /*
 |--------------------------------------------------------------------------

@@ -144,7 +144,7 @@
         <div class="container">
             <a class="navbar-brand" href="<?= base_url() ?>">
                 <?php if (!empty($settings['site_logo'])): ?>
-                    <img src="<?= base_url($settings['site_logo']) ?>" alt="Logo">
+                    <img src="<?= base_url($settings['site_logo']) ?>" alt="Logo" style="border-radius: 10px;">
                 <?php else: ?>
                     <span style="font-size: 1.5rem; font-weight: 700;"><?= $settings['site_title'] ?? 'Generasi Jenius' ?></span>
                 <?php endif; ?>

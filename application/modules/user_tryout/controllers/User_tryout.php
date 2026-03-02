@@ -80,9 +80,9 @@ class User_tryout extends CI_Controller
 			'total_questions' => count($questions)
 		];
 
-		$this->load->view('header', ['title' => $session->name]);
-		$this->load->view('play', $data);
-		$this->load->view('footer');
+		// $this->load->view('user_tryout/header', ['title' => $session->name]);
+		$this->load->view('user_tryout/play', $data);
+		// $this->load->view('user_tryout/footer');
 	}
 
 	public function ajax_save_answer()

@@ -42,6 +42,9 @@
 <script src="<?php echo base_url('themes/sb_admin/vendors/datatables/dataTables.fixedColumns.min.js') ?>"></script>
 <script src="<?php echo base_url('themes/sb_admin/vendors/lightgallery/js/lightgallery-all.min.js') ?>"></script>
 
+<!-- Math -->
+<script src="<?php echo base_url('themes/_public/js/eqneditor.js') ?>"></script>
+
 <!-- PrintThis -->
 <script src="<?php echo base_url('themes/_public/js/printThis.js') ?>"></script>
 

@@ -5,6 +5,20 @@ class UserTryoutModel extends CI_Model
 {
 	private $_table = 'user_tryouts';
 
+	public function getAll($params = array(), $orderField = null, $orderBy = 'asc')
+	{
+		$this->db->where($params);
+		if (!is_null($orderField)) {
+			$this->db->order_by($orderField, $orderBy);
+		};
+		return $this->db->get($this->_table)->result();
+	}
+
+	public function getDetail($params = array())
+	{
+		$this->db->where($params);
+		return $this->db->get($this->_table)->row();
+	}
 	public function getActiveUserTryout($user_id, $tryout_id)
 	{
 		return $this->db->where('user_id', $user_id)

@@ -11,7 +11,7 @@ $currentKey = ($this->router->fetch_class() == 'search' && isset($_GET['q'])) ? 
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-    <meta name="description" content="PT Macakal Pangan Sejahtera" />
+    <meta name="description" content="Generasi Jenius" />
     <meta name="author" content="PT. MPS | Widi Aljatsiyah" />
 
     <title>{title}</title>
