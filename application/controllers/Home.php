@@ -16,6 +16,7 @@ class Home extends MX_Controller
 			'TeamModel',
 			'GalleryModel',
 			'SettingHomeModel',
+			'LayananModel',
 			'UserModel', 'TryoutModel', 'SchoolModel', 'QuestionModel', 'UserTryoutModel'
 		]);
 	}
@@ -29,6 +30,7 @@ class Home extends MX_Controller
 		$data['testimonials'] = $this->TestimonialModel->getAll(['is_active' => 1, 'is_approved' => 1]);
 		$data['teams'] = $this->TeamModel->getAll(['is_active' => 1]);
 		$data['galleries'] = $this->GalleryModel->getAll(['is_active' => 1]);
+		$data['layanan'] = $this->LayananModel->getAll(['is_active' => 1]);
 		$data['settings'] = $this->SettingHomeModel->getAllSettings();
 
 		$data['total_students'] = $this->UserModel->countByRole('student');
@@ -47,5 +49,27 @@ class Home extends MX_Controller
 		$this->load->view('home/header', $data);
 		$this->load->view('home/home', $data);
 		$this->load->view('home/footer');
+	}
+
+	public function paket($id = null)
+	{
+		if(is_null($id)){
+
+		$data['packages'] = $this->PackageModel->getAll(['is_active' => 1]);
+		}else{
+			$data['packages'] = $this->PackageModel->getAll(['is_active' => 1, 'layanan_id' => $id]);
+
+		}
+		$data['layanan'] = $this->LayananModel->getAll(['is_active' => 1]);
+		$layanan = $this->LayananModel->getAll(['id' => $id]);
+		if($layanan){
+			$data['app'] = ['app_name' => $layanan[0]->nama_layanan];
+		}else{
+			$data['app'] = ['app_name' => 'Paket'];
+		}
+		$data['settings'] = $this->SettingHomeModel->getAllSettings();
+		$data['app'] = ['app_name' => 'Paket'];
+		$data['layanan_id'] = $id;
+		$this->load->view('home/paket', $data);
 	}
 }

@@ -155,7 +155,8 @@
             <div class="collapse navbar-collapse" id="navbarMain">
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                     <li class="nav-item"><a class="nav-link" href="#home">Beranda</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#features">Keunggulan</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#layanan">Layanan</a></li>
+					<li class="nav-item"><a class="nav-link" href="#features">Keunggulan</a></li>
                     <li class="nav-item"><a class="nav-link" href="#packages">Paket</a></li>
                     <li class="nav-item"><a class="nav-link" href="#faq">FAQ</a></li>
                     <li class="nav-item"><a class="nav-link" href="#testimonials">Testimoni</a></li>

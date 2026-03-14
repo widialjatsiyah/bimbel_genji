@@ -8,7 +8,7 @@ class Register extends AppBackend
     {
         parent::__construct();
         $this->load->model('UserModel');
-        $this->load->model('StudentDetailModel');
+        $this->load->model(['StudentDetailModel','UniversitasModel']);
         $this->load->library('form_validation');
     }
 
@@ -17,7 +17,8 @@ class Register extends AppBackend
         $data = array(
             'app' => $this->app(),
             'main_js' => $this->load_main_js('register'),
-            'page_title' => 'Daftar | ' . $this->app()->app_name
+            'page_title' => 'Daftar | ' . $this->app()->app_name,
+			'list_universitas' => $this->init_list($this->UniversitasModel->getAll(), 'id', 'name')
         );
         $this->load->view('index', $data);
     }
@@ -31,7 +32,8 @@ class Register extends AppBackend
             $data = array(
                 'app' => $this->app(),
                 'main_js' => $this->load_main_js('register'),
-                'page_title' => 'Daftar | ' . $this->app()->app_name
+                'page_title' => 'Daftar | ' . $this->app()->app_name,
+				'list_universitas' => $this->init_list($this->UniversitasModel->getAll(), 'id', 'name')
             );
             $this->load->view('index', $data);
         } else {
@@ -64,7 +66,9 @@ class Register extends AppBackend
                     'username' => $user_data['username'],
                     'nama_lengkap' => $user_data['nama_lengkap'],
                     'role' => 'student',
-                    'is_login' => true
+                    'is_login' => true,
+					'email' => $user_data['email'],
+					'profile_photo' => null
                 ];
                 $this->session->set_userdata('user', $session_data);
 

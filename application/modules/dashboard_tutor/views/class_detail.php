@@ -6,7 +6,9 @@
         </div>
         <div class="card-body">
             <a href="<?= base_url('dashboard_tutor') ?>" class="btn btn-secondary mb-3">&laquo; Kembali</a>
-
+<a href="<?= base_url('class_meeting/index/'.$class->id) ?>" class="btn btn-sm btn-primary">
+    <i class="zmdi zmdi-calendar"></i> Kelola Pertemuan
+</a>
             <div class="table-responsive">
                 <table class="table table-bordered">
                     <thead>

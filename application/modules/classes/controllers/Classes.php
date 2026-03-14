@@ -24,7 +24,7 @@ class Classes extends AppBackend
 
         // Ambil data guru (user dengan role 'teacher')
         $this->load->model('UserModel');
-        $teachers = $this->UserModel->getAll(['role' => 'teacher'], 'nama_lengkap', 'asc');
+        $teachers = $this->UserModel->getAll(['role' => 'tutor'], 'nama_lengkap', 'asc');
         $list_teacher = $this->init_list($teachers, 'id', 'nama_lengkap');
 
         $data = array(

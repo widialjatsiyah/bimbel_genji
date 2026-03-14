@@ -41,6 +41,11 @@ class ClassMeetingModel extends CI_Model
         ];
     }
 
+	public function getById($id)
+	{
+		return $this->db->where('id', $id)->get($this->_table)->row();
+	}
+	
     public function getByClass($class_id)
     {
         return $this->db->where('class_id', $class_id)
