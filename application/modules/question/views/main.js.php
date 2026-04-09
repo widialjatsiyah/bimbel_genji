@@ -7,6 +7,171 @@
         var _modal = "modal-form-question";
         var _form = "form-question";
 
+        // Fungsi untuk menangani preview gambar
+        function previewImage(input, previewContainer) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    previewContainer.html('<img src="' + e.target.result + '" style="max-width: 200px; max-height: 200px;" />');
+                }
+                
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // Event listener untuk file input gambar soal
+        $('.question-image').on('change', function() {
+            var previewContainer = $('#question_image_preview');
+            previewImage(this, previewContainer);
+            
+            // Simpan nama file ke hidden input
+            if (this.files && this.files[0]) {
+                var formData = new FormData();
+                formData.append('image', this.files[0]);
+                
+                // Upload gambar dan simpan path-nya
+                $.ajax({
+                    url: '<?php echo base_url("question/upload_image") ?>',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        var res = JSON.parse(response);
+                        if(res.status) {
+                            $('.question-image-hidden').val(res.path);
+                        }
+                    }
+                });
+            }
+        });
+
+        // Event listener untuk file input gambar pilihan A
+        $('[name="option_a_image_file"]').on('change', function() {
+            var previewContainer = $('#option_a_image_preview');
+            previewImage(this, previewContainer);
+            
+            if (this.files && this.files[0]) {
+                var formData = new FormData();
+                formData.append('image', this.files[0]);
+                
+                $.ajax({
+                    url: '<?php echo base_url("question/upload_image") ?>',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        var res = JSON.parse(response);
+                        if(res.status) {
+                            $('.option_a_image-hidden').val(res.path);
+                        }
+                    }
+                });
+            }
+        });
+
+        // Event listener untuk file input gambar pilihan B
+        $('[name="option_b_image_file"]').on('change', function() {
+            var previewContainer = $('#option_b_image_preview');
+            previewImage(this, previewContainer);
+            
+            if (this.files && this.files[0]) {
+                var formData = new FormData();
+                formData.append('image', this.files[0]);
+                
+                $.ajax({
+                    url: '<?php echo base_url("question/upload_image") ?>',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        var res = JSON.parse(response);
+                        if(res.status) {
+                            $('.option_b_image-hidden').val(res.path);
+                        }
+                    }
+                });
+            }
+        });
+
+        // Event listener untuk file input gambar pilihan C
+        $('[name="option_c_image_file"]').on('change', function() {
+            var previewContainer = $('#option_c_image_preview');
+            previewImage(this, previewContainer);
+            
+            if (this.files && this.files[0]) {
+                var formData = new FormData();
+                formData.append('image', this.files[0]);
+                
+                $.ajax({
+                    url: '<?php echo base_url("question/upload_image") ?>',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        var res = JSON.parse(response);
+                        if(res.status) {
+                            $('.option_c_image-hidden').val(res.path);
+                        }
+                    }
+                });
+            }
+        });
+
+        // Event listener untuk file input gambar pilihan D
+        $('[name="option_d_image_file"]').on('change', function() {
+            var previewContainer = $('#option_d_image_preview');
+            previewImage(this, previewContainer);
+            
+            if (this.files && this.files[0]) {
+                var formData = new FormData();
+                formData.append('image', this.files[0]);
+                
+                $.ajax({
+                    url: '<?php echo base_url("question/upload_image") ?>',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        var res = JSON.parse(response);
+                        if(res.status) {
+                            $('.option_d_image-hidden').val(res.path);
+                        }
+                    }
+                });
+            }
+        });
+
+        // Event listener untuk file input gambar pilihan E
+        $('[name="option_e_image_file"]').on('change', function() {
+            var previewContainer = $('#option_e_image_preview');
+            previewImage(this, previewContainer);
+            
+            if (this.files && this.files[0]) {
+                var formData = new FormData();
+                formData.append('image', this.files[0]);
+                
+                $.ajax({
+                    url: '<?php echo base_url("question/upload_image") ?>',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        var res = JSON.parse(response);
+                        if(res.status) {
+                            $('.option_e_image-hidden').val(res.path);
+                        }
+                    }
+                });
+            }
+        });
+
         // Initialize DataTables
         if ($("#" + _table)[0]) {
             var table_question = $("#" + _table).DataTable({
@@ -232,11 +397,48 @@
             $(`#${_form} .question-difficulty`).val(temp.difficulty);
             $(`#${_form} .question-curriculum`).val(temp.curriculum);
             $(`#${_form} .question-question_text`).val(temp.question_text);
+            
+            // Set gambar soal jika ada
+            if(temp.question_image) {
+                $(`#${_form} .question-image-hidden`).val(temp.question_image);
+                $('#question_image_preview').html('<img src="<?php echo base_url() ?>' + temp.question_image + '" style="max-width: 200px; max-height: 200px;" />');
+            }
+            
             $(`#${_form} .question-option_a`).val(temp.option_a);
+            // Set gambar pilihan A jika ada
+            if(temp.option_a_image) {
+                $(`#${_form} .option_a_image-hidden`).val(temp.option_a_image);
+                $('#option_a_image_preview').html('<img src="<?php echo base_url() ?>' + temp.option_a_image + '" style="max-width: 200px; max-height: 200px;" />');
+            }
+            
             $(`#${_form} .question-option_b`).val(temp.option_b);
+            // Set gambar pilihan B jika ada
+            if(temp.option_b_image) {
+                $(`#${_form} .option_b_image-hidden`).val(temp.option_b_image);
+                $('#option_b_image_preview').html('<img src="<?php echo base_url() ?>' + temp.option_b_image + '" style="max-width: 200px; max-height: 200px;" />');
+            }
+            
             $(`#${_form} .question-option_c`).val(temp.option_c);
+            // Set gambar pilihan C jika ada
+            if(temp.option_c_image) {
+                $(`#${_form} .option_c_image-hidden`).val(temp.option_c_image);
+                $('#option_c_image_preview').html('<img src="<?php echo base_url() ?>' + temp.option_c_image + '" style="max-width: 200px; max-height: 200px;" />');
+            }
+            
             $(`#${_form} .question-option_d`).val(temp.option_d);
+            // Set gambar pilihan D jika ada
+            if(temp.option_d_image) {
+                $(`#${_form} .option_d_image-hidden`).val(temp.option_d_image);
+                $('#option_d_image_preview').html('<img src="<?php echo base_url() ?>' + temp.option_d_image + '" style="max-width: 200px; max-height: 200px;" />');
+            }
+            
             $(`#${_form} .question-option_e`).val(temp.option_e);
+            // Set gambar pilihan E jika ada
+            if(temp.option_e_image) {
+                $(`#${_form} .option_e_image-hidden`).val(temp.option_e_image);
+                $('#option_e_image_preview').html('<img src="<?php echo base_url() ?>' + temp.option_e_image + '" style="max-width: 200px; max-height: 200px;" />');
+            }
+            
             $(`#${_form} .question-correct_option`).val(temp.correct_option);
             $(`#${_form} .question-explanation`).val(temp.explanation);
             $(`#${_form} .question-video_explanation_url`).val(temp.video_explanation_url);
@@ -245,10 +447,16 @@
         // Handle save
         $("#" + _modal + " ." + _section + "-action-save").on("click", function(e) {
             e.preventDefault();
+            
+            // Gunakan FormData untuk mengirim data dan file
+            var formData = new FormData($(`#${_form}`)[0]);
+            
             $.ajax({
                 type: "post",
                 url: "<?php echo base_url('question/ajax_save/') ?>" + _key,
-                data: $("#" + _form).serialize(),
+                data: formData,
+                processData: false,
+                contentType: false,
                 success: function(response) {
                     var response = JSON.parse(response);
                     if (response.status === true) {
@@ -259,6 +467,10 @@
                     } else {
                         notify(response.data, "danger");
                     };
+                },
+                error: function(xhr, status, error) {
+                    console.log("Error: ", xhr.responseText);
+                    notify("Terjadi kesalahan saat menyimpan data", "danger");
                 }
             });
         });
@@ -302,6 +514,14 @@
             $(`#${_form} .question-subject_id`).val('').trigger('change');
             $(`#${_form} .question-chapter_id`).empty().append('<option value=""></option>').trigger('change');
             $(`#${_form} .question-topic_id`).empty().append('<option value=""></option>').trigger('change');
+            
+            // Kosongkan preview gambar
+            $('#question_image_preview').html('');
+            $('#option_a_image_preview').html('');
+            $('#option_b_image_preview').html('');
+            $('#option_c_image_preview').html('');
+            $('#option_d_image_preview').html('');
+            $('#option_e_image_preview').html('');
         };
 
     });

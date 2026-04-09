@@ -158,6 +158,7 @@
 
                     <small class="form-text text-muted">
                         Fields with red stars (<label required></label>) are required.
+                        Gambar opsional dan dapat digunakan bersamaan dengan teks atau tanpa teks.
                     </small>
                 </form>
             </div>

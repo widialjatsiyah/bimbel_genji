@@ -40,6 +40,16 @@
             margin-bottom: 30px;
             line-height: 1.6;
         }
+        .question-image {
+            margin-top: 15px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .question-image img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+        }
         .options-list {
             list-style: none;
             padding: 0;
@@ -62,6 +72,29 @@
         }
         .options-list li input[type="radio"] {
             margin-right: 15px;
+        }
+        .option-content {
+            display: flex;
+            align-items: flex-start;
+        }
+        .option-text {
+            flex: 1;
+        }
+        .option-image {
+            margin-left: 15px;
+            max-width: 100px;
+        }
+        .option-image img {
+            max-width: 100%;
+            border-radius: 4px;
+        }
+        .essay-answer-area {
+            width: 100%;
+            min-height: 150px;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            resize: vertical;
         }
         .nav-questions {
             background: white;
@@ -138,6 +171,9 @@
             font-weight: 500;
             margin-right: 10px;
         }
+        .essay-container {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -165,9 +201,21 @@
                     <div class="question-text" id="question-text">
                         <!-- akan diisi JavaScript -->
                     </div>
+                    <div class="question-image" id="question-image-container" style="display: none;">
+                        <!-- Gambar soal akan ditampilkan di sini -->
+                    </div>
+                    
+                    <!-- Kontainer untuk pilihan ganda -->
                     <div class="options" id="options-container">
                         <!-- akan diisi JavaScript -->
                     </div>
+                    
+                    <!-- Kontainer untuk jawaban esai -->
+                    <div class="essay-container" id="essay-container">
+                        <label for="essay-answer">Jawaban Esai:</label>
+                        <textarea id="essay-answer" class="essay-answer-area" placeholder="Tulis jawaban esai Anda di sini..."></textarea>
+                    </div>
+                    
                     <div class="d-flex justify-content-between mt-4">
                         <div>
                             <button class="btn-unsure" id="btn-unsure">
@@ -225,23 +273,67 @@
             // Inisialisasi tampilan
             function renderQuestion(index) {
                 var q = questions[index];
-                var questionData = q.question; // asumsikan data soal sudah di-join
-                $('#question-text').html(questionData.question_text);
-                var optionsHtml = '';
-                var letters = ['A', 'B', 'C', 'D', 'E'];
-                for (var i = 0; i < 5; i++) {
-                    var opt = questionData['option_' + letters[i].toLowerCase()];
-                    if (opt) {
-                        var checked = (answerMap[q.question_id] && answerMap[q.question_id].answer === letters[i]) ? 'checked' : '';
-                        optionsHtml += `
-                            <li class="option-item ${checked ? 'selected' : ''}" data-option="${letters[i]}">
-                                <input type="radio" name="option" value="${letters[i]}" ${checked} hidden>
-                                <span class="option-letter">${letters[i]}.</span> ${opt}
-                            </li>
-                        `;
+                var questionData = q; // karena sekarang data soal sudah digabungkan
+                
+                // Tampilkan atau sembunyikan elemen berdasarkan jenis soal
+                if (questionData.question_type === 'essay') {
+                    $('#options-container').hide();
+                    $('#essay-container').show();
+                    
+                    // Isi jawaban esai jika sudah pernah dijawab sebelumnya
+                    var essayAnswer = answerMap[q.question_id];
+                    if (essayAnswer && essayAnswer.answer_text) {
+                        $('#essay-answer').val(essayAnswer.answer_text);
+                    } else {
+                        $('#essay-answer').val('');
                     }
+                } else {
+                    $('#options-container').show();
+                    $('#essay-container').hide();
                 }
-                $('#options-container').html(optionsHtml);
+                
+                $('#question-text').html(questionData.question_text);
+                
+                // Tampilkan gambar soal jika ada
+                var questionImageContainer = $('#question-image-container');
+                if (questionData.question_image) {
+                    questionImageContainer.html('<img src="<?= base_url() ?>' + questionData.question_image + '" alt="Gambar Soal" />');
+                    questionImageContainer.show();
+                } else {
+                    questionImageContainer.hide();
+                }
+
+                // Hanya tampilkan pilihan jawaban jika soal pilihan ganda
+                if (questionData.question_type !== 'essay') {
+                    var optionsHtml = '';
+                    var letters = ['A', 'B', 'C', 'D', 'E'];
+                    for (var i = 0; i < 5; i++) {
+                        var optText = questionData['option_' + letters[i].toLowerCase()];
+                        var optImage = questionData['option_' + letters[i].toLowerCase() + '_image'];
+                        
+                        if (optText || optImage) {
+                            var checked = (answerMap[q.question_id] && answerMap[q.question_id].answer === letters[i]) ? 'checked' : '';
+                            var isSelectedClass = checked ? 'selected' : '';
+                            
+                            var optionContent = '<div class="option-content">';
+                            if (optText) {
+                                optionContent += '<span class="option-text">' + optText + '</span>';
+                            }
+                            if (optImage) {
+                                optionContent += '<div class="option-image"><img src="<?= base_url() ?>' + optImage + '" alt="Gambar Opsi ' + letters[i] + '" /></div>';
+                            }
+                            optionContent += '</div>';
+                            
+                            optionsHtml += `
+                                <li class="option-item ${isSelectedClass}" data-option="${letters[i]}">
+                                    <input type="radio" name="option" value="${letters[i]}" ${checked} hidden>
+                                    <span class="option-letter">${letters[i]}.</span> ${optionContent}
+                                </li>
+                            `;
+                        }
+                    }
+                    $('#options-container').html(optionsHtml);
+                }
 
                 // Set status ragu
                 if (answerMap[q.question_id] && answerMap[q.question_id].is_unsure == 1) {
@@ -265,7 +357,7 @@
                     if (answerMap[qid]) {
                         if (answerMap[qid].is_unsure == 1) {
                             statusClass = 'unsure';
-                        } else if (answerMap[qid].answer) {
+                        } else if (answerMap[qid].answer || (answerMap[qid].answer_text && answerMap[qid].answer_text.trim() !== '')) {
                             statusClass = 'answered';
                         } else {
                             statusClass = 'skipped';
@@ -311,24 +403,76 @@
                 });
             });
 
+            // Event handler untuk jawaban esai
+            $('#essay-answer').on('input', function() {
+                var answer = $(this).val();
+                var qid = questions[currentIndex].question_id;
+                
+                // Simpan jawaban esai via AJAX
+                $.ajax({
+                    url: '<?= base_url("user_tryout/ajax_save_essay_answer") ?>',
+                    method: 'POST',
+                    data: {
+                        user_tryout_id: userTryoutId,
+                        question_id: qid,
+                        answer_text: answer,
+                        is_unsure: $('#btn-unsure').hasClass('active') ? 1 : 0
+                    },
+                    success: function(res) {
+                        if (res.status) {
+                            // Update answerMap
+                            if (!answerMap[qid]) answerMap[qid] = {};
+                            answerMap[qid].answer_text = answer;
+                            answerMap[qid].is_unsure = $('#btn-unsure').hasClass('active') ? 1 : 0;
+                            updateGrid();
+                        }
+                    }
+                });
+            });
+
             // Tombol ragu-ragu
             $('#btn-unsure').click(function() {
                 $(this).toggleClass('active');
                 var qid = questions[currentIndex].question_id;
                 var isUnsure = $(this).hasClass('active') ? 1 : 0;
 
+                var endpoint = (questions[currentIndex].question_type === 'essay') ? 
+                    '<?= base_url("user_tryout/ajax_save_essay_answer") ?>' : 
+                    '<?= base_url("user_tryout/ajax_save_answer") ?>';
+                
+                var requestData = {
+                    user_tryout_id: userTryoutId,
+                    question_id: qid,
+                    is_unsure: isUnsure
+                };
+                
+                // Tambahkan data jawaban jika soal esai
+                if (questions[currentIndex].question_type === 'essay') {
+                    requestData.answer_text = $('#essay-answer').val();
+                } else {
+                    // Untuk soal pilihan ganda, kirim jawaban jika ada
+                    var selectedOption = $('input[name="option"]:checked').val();
+                    if (selectedOption) {
+                        requestData.answer = selectedOption;
+                    }
+                }
+
                 $.ajax({
-                    url: '<?= base_url("user_tryout/ajax_mark_unsure") ?>',
+                    url: endpoint,
                     method: 'POST',
-                    data: {
-                        user_tryout_id: userTryoutId,
-                        question_id: qid,
-                        is_unsure: isUnsure
-                    },
+                    data: requestData,
                     success: function(res) {
                         if (res.status) {
                             if (!answerMap[qid]) answerMap[qid] = {};
                             answerMap[qid].is_unsure = isUnsure;
+                            
+                            // Update jawaban jika soal esai
+                            if (questions[currentIndex].question_type === 'essay') {
+                                answerMap[qid].answer_text = $('#essay-answer').val();
+                            } else if (requestData.answer) {
+                                answerMap[qid].answer = requestData.answer;
+                            }
+                            
                             updateGrid();
                         }
                     }

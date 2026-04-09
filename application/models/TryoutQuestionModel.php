@@ -85,7 +85,7 @@ class TryoutQuestionModel extends CI_Model
 
 	public function getQuestionsBySession($session_id, $random = false)
 	{
-		$this->db->select('tq.*, q.question_text, q.option_a, q.option_b, q.option_c, q.option_d, q.option_e, q.correct_option, q.explanation')
+		$this->db->select('tq.*, q.question_text, q.question_type, q.question_image, q.expected_keywords, q.min_keyword_matches, q.option_a, q.option_a_image, q.option_b, q.option_b_image, q.option_c, q.option_c_image, q.option_d, q.option_d_image, q.option_e, q.option_e_image, q.correct_option, q.explanation')
 			->from('tryout_questions tq')
 			->join('questions q', 'q.id = tq.question_id')
 			->where('tq.tryout_session_id', $session_id);

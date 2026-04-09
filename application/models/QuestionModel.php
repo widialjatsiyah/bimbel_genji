@@ -34,6 +34,11 @@ class QuestionModel extends CI_Model
 				'rules' => 'required'
 			],
 			[
+				'field' => 'question_type',
+				'label' => 'Jenis Soal',
+				'rules' => 'required|in_list[multiple_choice,essay]'
+			],
+			[
 				'field' => 'question_text',
 				'label' => 'Teks Soal',
 				'rules' => 'required'
@@ -66,7 +71,159 @@ class QuestionModel extends CI_Model
 			[
 				'field' => 'correct_option',
 				'label' => 'Jawaban Benar',
-				'rules' => 'required|max_length[1]'
+				'rules' => 'required_if[question_type,multiple_choice]|max_length[1]'
+			],
+			[
+				'field' => 'explanation',
+				'label' => 'Pembahasan',
+				'rules' => 'trim'
+			],
+			[
+				'field' => 'video_explanation_url',
+				'label' => 'URL Video Pembahasan',
+				'rules' => 'trim|valid_url'
+			],
+		);
+	}
+
+	public function rulesWithImage()
+	{
+		return array(
+			[
+				'field' => 'subject_id',
+				'label' => 'Mata Pelajaran',
+				'rules' => 'required|integer'
+			],
+			[
+				'field' => 'chapter_id',
+				'label' => 'Bab',
+				'rules' => 'integer'
+			],
+			[
+				'field' => 'topic_id',
+				'label' => 'Topik',
+				'rules' => 'integer'
+			],
+			[
+				'field' => 'difficulty',
+				'label' => 'Tingkat Kesulitan',
+				'rules' => 'required'
+			],
+			[
+				'field' => 'curriculum',
+				'label' => 'Kurikulum',
+				'rules' => 'required'
+			],
+			[
+				'field' => 'question_type',
+				'label' => 'Jenis Soal',
+				'rules' => 'required|in_list[multiple_choice,essay]'
+			],
+			[
+				'field' => 'question_text',
+				'label' => 'Teks Soal',
+				'rules' => 'trim'
+			],
+			[
+				'field' => 'option_a',
+				'label' => 'Pilihan A',
+				'rules' => 'trim'
+			],
+			[
+				'field' => 'option_b',
+				'label' => 'Pilihan B',
+				'rules' => 'trim'
+			],
+			[
+				'field' => 'option_c',
+				'label' => 'Pilihan C',
+				'rules' => 'trim'
+			],
+			[
+				'field' => 'option_d',
+				'label' => 'Pilihan D',
+				'rules' => 'trim'
+			],
+			[
+				'field' => 'option_e',
+				'label' => 'Pilihan E',
+				'rules' => 'trim'
+			],
+			[
+				'field' => 'correct_option',
+				'label' => 'Jawaban Benar',
+				'rules' => 'required_if[question_type,multiple_choice]|max_length[1]'
+			],
+			[
+				'field' => 'expected_keywords',
+				'label' => 'Kata Kunci Jawaban Esai',
+				'rules' => 'trim'
+			],
+			[
+				'field' => 'min_keyword_matches',
+				'label' => 'Minimal Cocok Kata Kunci',
+				'rules' => 'integer|greater_than_equal_to[0]'
+			],
+			[
+				'field' => 'explanation',
+				'label' => 'Pembahasan',
+				'rules' => 'trim'
+			],
+			[
+				'field' => 'video_explanation_url',
+				'label' => 'URL Video Pembahasan',
+				'rules' => 'trim|valid_url'
+			],
+		);
+	}
+
+	public function rulesEssayOnly()
+	{
+		return array(
+			[
+				'field' => 'subject_id',
+				'label' => 'Mata Pelajaran',
+				'rules' => 'required|integer'
+			],
+			[
+				'field' => 'chapter_id',
+				'label' => 'Bab',
+				'rules' => 'integer'
+			],
+			[
+				'field' => 'topic_id',
+				'label' => 'Topik',
+				'rules' => 'integer'
+			],
+			[
+				'field' => 'difficulty',
+				'label' => 'Tingkat Kesulitan',
+				'rules' => 'required'
+			],
+			[
+				'field' => 'curriculum',
+				'label' => 'Kurikulum',
+				'rules' => 'required'
+			],
+			[
+				'field' => 'question_type',
+				'label' => 'Jenis Soal',
+				'rules' => 'required|in_list[multiple_choice,essay]'
+			],
+			[
+				'field' => 'question_text',
+				'label' => 'Teks Soal',
+				'rules' => 'required'
+			],
+			[
+				'field' => 'expected_keywords',
+				'label' => 'Kata Kunci Jawaban Esai',
+				'rules' => 'required'
+			],
+			[
+				'field' => 'min_keyword_matches',
+				'label' => 'Minimal Cocok Kata Kunci',
+				'rules' => 'required|integer|greater_than_equal_to[1]'
 			],
 			[
 				'field' => 'explanation',
@@ -111,16 +268,56 @@ class QuestionModel extends CI_Model
 			$this->topic_id = $this->input->post('topic_id') ?: null;
 			$this->difficulty = $this->input->post('difficulty');
 			$this->curriculum = $this->input->post('curriculum');
+			$this->question_type = $this->input->post('question_type') ?: 'multiple_choice';
 			$this->question_text = $this->input->post('question_text');
-			$this->option_a = $this->input->post('option_a');
-			$this->option_b = $this->input->post('option_b');
-			$this->option_c = $this->input->post('option_c');
-			$this->option_d = $this->input->post('option_d');
-			$this->option_e = $this->input->post('option_e');
-			$this->correct_option = $this->input->post('correct_option');
+			
+			// Untuk soal esai, pilihan jawaban opsional
+			if ($this->question_type === 'multiple_choice') {
+				$this->option_a = $this->input->post('option_a');
+				$this->option_b = $this->input->post('option_b');
+				$this->option_c = $this->input->post('option_c');
+				$this->option_d = $this->input->post('option_d');
+				$this->option_e = $this->input->post('option_e');
+				$this->correct_option = $this->input->post('correct_option');
+			} else {
+				// Untuk soal esai, set opsi menjadi kosong jika tidak disediakan
+				$this->option_a = $this->input->post('option_a') ?: '';
+				$this->option_b = $this->input->post('option_b') ?: '';
+				$this->option_c = $this->input->post('option_c') ?: '';
+				$this->option_d = $this->input->post('option_d') ?: '';
+				$this->option_e = $this->input->post('option_e') ?: '';
+				$this->correct_option = null; // Tidak ada jawaban benar untuk soal esai
+			}
+			
 			$this->explanation = $this->input->post('explanation');
 			$this->video_explanation_url = $this->input->post('video_explanation_url');
 			$this->created_by = $this->session->userdata('user')['id']; // asumsikan session user ada
+			
+			// Menyimpan path gambar jika ada
+			$this->question_image = $this->input->post('question_image') ?: null;
+			$this->option_a_image = $this->input->post('option_a_image') ?: null;
+			$this->option_b_image = $this->input->post('option_b_image') ?: null;
+			$this->option_c_image = $this->input->post('option_c_image') ?: null;
+			$this->option_d_image = $this->input->post('option_d_image') ?: null;
+			$this->option_e_image = $this->input->post('option_e_image') ?: null;
+			
+			// Untuk soal esai, simpan kata kunci yang diharapkan
+			$expected_keywords = $this->input->post('expected_keywords');
+			if ($expected_keywords) {
+				// Konversi dari string JSON ke dalam format yang bisa diproses
+				$keywords_array = json_decode($expected_keywords, true);
+				if ($keywords_array !== null) {
+					$this->expected_keywords = $expected_keywords;
+				} else {
+					// Jika bukan JSON, coba simpan sebagai string biasa
+					$this->expected_keywords = $expected_keywords;
+				}
+			} else {
+				$this->expected_keywords = null;
+			}
+			
+			$this->min_keyword_matches = $this->input->post('min_keyword_matches') ?: 1;
+			
 			$this->db->insert($this->_table, $this);
 			$response = array('status' => true, 'data' => 'Data soal berhasil disimpan.');
 		} catch (\Throwable $th) {
@@ -138,17 +335,57 @@ class QuestionModel extends CI_Model
 			$this->topic_id = $this->input->post('topic_id') ?: null;
 			$this->difficulty = $this->input->post('difficulty');
 			$this->curriculum = $this->input->post('curriculum');
+			$this->question_type = $this->input->post('question_type') ?: 'multiple_choice';
 			$this->question_text = $this->input->post('question_text');
-			$this->option_a = $this->input->post('option_a');
-			$this->option_b = $this->input->post('option_b');
-			$this->option_c = $this->input->post('option_c');
-			$this->option_d = $this->input->post('option_d');
-			$this->option_e = $this->input->post('option_e');
-			$this->correct_option = $this->input->post('correct_option');
+			
+			// Untuk soal esai, pilihan jawaban opsional
+			if ($this->question_type === 'multiple_choice') {
+				$this->option_a = $this->input->post('option_a');
+				$this->option_b = $this->input->post('option_b');
+				$this->option_c = $this->input->post('option_c');
+				$this->option_d = $this->input->post('option_d');
+				$this->option_e = $this->input->post('option_e');
+				$this->correct_option = $this->input->post('correct_option');
+			} else {
+				// Untuk soal esai, set opsi menjadi kosong jika tidak disediakan
+				$this->option_a = $this->input->post('option_a') ?: '';
+				$this->option_b = $this->input->post('option_b') ?: '';
+				$this->option_c = $this->input->post('option_c') ?: '';
+				$this->option_d = $this->input->post('option_d') ?: '';
+				$this->option_e = $this->input->post('option_e') ?: '';
+				$this->correct_option = null; // Tidak ada jawaban benar untuk soal esai
+			}
+			
 			$this->explanation = $this->input->post('explanation');
 			$this->video_explanation_url = $this->input->post('video_explanation_url');
 			$this->updated_by = $this->session->userdata('user')['id'];
 			$this->updated_date = date('Y-m-d H:i:s');
+			
+			// Menyimpan path gambar jika ada
+			$this->question_image = $this->input->post('question_image') ?: null;
+			$this->option_a_image = $this->input->post('option_a_image') ?: null;
+			$this->option_b_image = $this->input->post('option_b_image') ?: null;
+			$this->option_c_image = $this->input->post('option_c_image') ?: null;
+			$this->option_d_image = $this->input->post('option_d_image') ?: null;
+			$this->option_e_image = $this->input->post('option_e_image') ?: null;
+			
+			// Untuk soal esai, simpan kata kunci yang diharapkan
+			$expected_keywords = $this->input->post('expected_keywords');
+			if ($expected_keywords) {
+				// Konversi dari string JSON ke dalam format yang bisa diproses
+				$keywords_array = json_decode($expected_keywords, true);
+				if ($keywords_array !== null) {
+					$this->expected_keywords = $expected_keywords;
+				} else {
+					// Jika bukan JSON, coba simpan sebagai string biasa
+					$this->expected_keywords = $expected_keywords;
+				}
+			} else {
+				$this->expected_keywords = null;
+			}
+			
+			$this->min_keyword_matches = $this->input->post('min_keyword_matches') ?: 1;
+			
 			$this->db->update($this->_table, $this, array('id' => $id));
 			$response = array('status' => true, 'data' => 'Data soal berhasil diperbarui.');
 		} catch (\Throwable $th) {

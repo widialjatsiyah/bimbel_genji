@@ -69,6 +69,7 @@ class Question extends AppBackend
             'select_column' => [
                 'questions.id',
                 'questions.question_text',
+                'questions.question_type',
                 'questions.difficulty',
                 'questions.curriculum',
                 'subjects.name as subject_name',
@@ -109,7 +110,28 @@ class Question extends AppBackend
     public function ajax_save($id = null)
     {
         $this->handle_ajax_request();
-        $this->form_validation->set_rules($this->QuestionModel->rules());
+        
+        // Ambil jenis soal dari input
+        $question_type = $this->input->post('question_type') ?: 'multiple_choice';
+        
+        // Atur aturan validasi berdasarkan jenis soal
+        if ($question_type === 'essay') {
+            $this->form_validation->set_rules($this->QuestionModel->rulesEssayOnly());
+        } else {
+            // Atur aturan validasi berbeda jika menggunakan gambar
+            $use_images = $this->input->post('question_image') || 
+                          $this->input->post('option_a_image') || 
+                          $this->input->post('option_b_image') || 
+                          $this->input->post('option_c_image') || 
+                          $this->input->post('option_d_image') || 
+                          $this->input->post('option_e_image');
+            
+            if ($use_images) {
+                $this->form_validation->set_rules($this->QuestionModel->rulesWithImage());
+            } else {
+                $this->form_validation->set_rules($this->QuestionModel->rules());
+            }
+        }
 
         if ($this->form_validation->run() === true) {
             if (is_null($id)) {
@@ -145,5 +167,30 @@ class Question extends AppBackend
         $chapter_id = $this->input->get('chapter_id');
         $topics = $this->TopicModel->getAll(['chapter_id' => $chapter_id], 'name', 'asc');
         echo json_encode($topics);
+    }
+    
+    // Fungsi untuk upload gambar
+    public function upload_image()
+    {
+        $this->handle_ajax_request();
+        
+        $config['upload_path'] = './uploads/questions/';
+        $config['allowed_types'] = 'jpg|png|jpeg|gif';
+        $config['max_size'] = 2048; // 2MB
+        
+        // Buat folder jika belum ada
+        if (!is_dir($config['upload_path'])) {
+            mkdir($config['upload_path'], 0755, true);
+        }
+        
+        $this->load->library('upload', $config);
+        
+        if (!$this->upload->do_upload('image')) {
+            echo json_encode(['status' => false, 'error' => $this->upload->display_errors()]);
+        } else {
+            $upload_data = $this->upload->data();
+            $path = 'uploads/questions/' . $upload_data['file_name'];
+            echo json_encode(['status' => true, 'path' => $path]);
+        }
     }
 }
