@@ -24,6 +24,21 @@ class QuestionModel extends CI_Model
 				'rules' => 'integer'
 			],
 			[
+				'field' => 'group_id',
+				'label' => 'Grup Soal',
+				'rules' => 'integer'
+			],
+			[
+				'field' => 'group_order',
+				'label' => 'Urutan dalam Grup',
+				'rules' => 'integer|greater_than_equal_to[1]'
+			],
+			[
+				'field' => 'is_group_main',
+				'label' => 'Soal Utama Grup',
+				'rules' => 'integer|in_list[0,1]'
+			],
+			[
 				'field' => 'difficulty',
 				'label' => 'Tingkat Kesulitan',
 				'rules' => 'required'
@@ -103,6 +118,21 @@ class QuestionModel extends CI_Model
 				'field' => 'topic_id',
 				'label' => 'Topik',
 				'rules' => 'integer'
+			],
+			[
+				'field' => 'group_id',
+				'label' => 'Grup Soal',
+				'rules' => 'integer'
+			],
+			[
+				'field' => 'group_order',
+				'label' => 'Urutan dalam Grup',
+				'rules' => 'integer|greater_than_equal_to[1]'
+			],
+			[
+				'field' => 'is_group_main',
+				'label' => 'Soal Utama Grup',
+				'rules' => 'integer|in_list[0,1]'
 			],
 			[
 				'field' => 'difficulty',
@@ -196,6 +226,21 @@ class QuestionModel extends CI_Model
 				'rules' => 'integer'
 			],
 			[
+				'field' => 'group_id',
+				'label' => 'Grup Soal',
+				'rules' => 'integer'
+			],
+			[
+				'field' => 'group_order',
+				'label' => 'Urutan dalam Grup',
+				'rules' => 'integer|greater_than_equal_to[1]'
+			],
+			[
+				'field' => 'is_group_main',
+				'label' => 'Soal Utama Grup',
+				'rules' => 'integer|in_list[0,1]'
+			],
+			[
 				'field' => 'difficulty',
 				'label' => 'Tingkat Kesulitan',
 				'rules' => 'required'
@@ -266,6 +311,9 @@ class QuestionModel extends CI_Model
 			$this->subject_id = $this->input->post('subject_id');
 			$this->chapter_id = $this->input->post('chapter_id') ?: null;
 			$this->topic_id = $this->input->post('topic_id') ?: null;
+			$this->group_id = $this->input->post('group_id') ?: null;
+			$this->group_order = $this->input->post('group_order') ?: 1;
+			$this->is_group_main = $this->input->post('is_group_main') ? 1 : 0;
 			$this->difficulty = $this->input->post('difficulty');
 			$this->curriculum = $this->input->post('curriculum');
 			$this->question_type = $this->input->post('question_type') ?: 'multiple_choice';
@@ -333,6 +381,9 @@ class QuestionModel extends CI_Model
 			$this->subject_id = $this->input->post('subject_id');
 			$this->chapter_id = $this->input->post('chapter_id') ?: null;
 			$this->topic_id = $this->input->post('topic_id') ?: null;
+			$this->group_id = $this->input->post('group_id') ?: null;
+			$this->group_order = $this->input->post('group_order') ?: 1;
+			$this->is_group_main = $this->input->post('is_group_main') ? 1 : 0;
 			$this->difficulty = $this->input->post('difficulty');
 			$this->curriculum = $this->input->post('curriculum');
 			$this->question_type = $this->input->post('question_type') ?: 'multiple_choice';
@@ -414,5 +465,37 @@ class QuestionModel extends CI_Model
 	public function countAll()
 	{
 		return $this->db->count_all('questions');
+	}
+	
+	/**
+	 * Mendapatkan soal-soal berdasarkan grup
+	 */
+	public function getByGroupId($group_id)
+	{
+		return $this->db->where('group_id', $group_id)
+			->order_by('group_order', 'asc')
+			->get($this->_table)
+			->result();
+	}
+	
+	/**
+	 * Mendapatkan soal utama dari sebuah grup
+	 */
+	public function getMainQuestionByGroupId($group_id)
+	{
+		return $this->db->where('group_id', $group_id)
+			->where('is_group_main', 1)
+			->get($this->_table)
+			->row();
+	}
+	
+	/**
+	 * Mendapatkan soal-soal yang bukan bagian dari grup
+	 */
+	public function getNonGroupQuestions()
+	{
+		return $this->db->where('group_id IS NULL')
+			->get($this->_table)
+			->result();
 	}
 }

@@ -578,4 +578,36 @@ class AppBackend extends MX_Controller
 
         return $result;
     }
+
+    /**
+     * Generate PDF from HTML content using MPDF
+     * @param string $html Content to convert to PDF
+     * @param string $filename Output filename
+     * @param string $orientation Page orientation (P/L)
+     */
+    public function generatePDF($html, $filename = 'output.pdf', $orientation = 'P')
+    {
+        // Check if MPDF library exists
+        if (!class_exists('\Mpdf\Mpdf')) {
+            // Load MPDF from vendor
+            require_once FCPATH . 'vendor/autoload.php';
+        }
+
+        // Create new MPDF instance
+        $mpdf = new \Mpdf\Mpdf([
+            'orientation' => $orientation,
+            'margin_left' => 15,
+            'margin_right' => 15,
+            'margin_top' => 15,
+            'margin_bottom' => 15,
+            'margin_header' => 10,
+            'margin_footer' => 10
+        ]);
+
+        // Write HTML content to PDF
+        $mpdf->WriteHTML($html);
+
+        // Output PDF
+        $mpdf->Output($filename, 'D'); // 'D' forces download
+    }
 }

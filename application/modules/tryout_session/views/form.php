@@ -60,6 +60,37 @@
                         <i class="form-group__bar"></i>
                     </div>
 
+                    <div class="form-group">
+                        <label>Acak Soal</label>
+                        <div class="toggle-switch">
+                            <label>
+                                <input type="checkbox" name="is_random" value="1" class="tryout_session-is_random">
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">Aktifkan acak soal</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label required>Metode Perhitungan Skor</label>
+                        <div class="radio radio--charlie">
+                            <label>
+                                <input type="radio" name="scoring_method" value="correct_incorrect" checked>
+                                <span class="choice">
+                                    <strong>Benar/Salah</strong> - 1 poin untuk jawaban benar, 0 poin untuk jawaban salah
+                                </span>
+                            </label>
+                        </div>
+                        <div class="radio radio--charlie">
+                            <label>
+                                <input type="radio" name="scoring_method" value="points_per_question">
+                                <span class="choice">
+                                    <strong>Poin per Soal</strong> - Gunakan jumlah poin yang ditentukan untuk setiap soal
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
                     <small class="form-text text-muted">
                         Fields with red stars (<label required></label>) are required.
                     </small>

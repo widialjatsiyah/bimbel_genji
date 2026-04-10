@@ -1,317 +1,397 @@
 <?php
 defined('BASEPATH') or exit('No direct script access allowed');
+require_once(APPPATH . 'controllers/AppBackend.php');
 
-class User_tryout extends CI_Controller
+class User_tryout extends AppBackend
 {
-	function __construct()
-	{
-		parent::__construct();
-		// Pastikan user sudah login
-		if (!$this->session->userdata('user')) {
-			redirect('auth/login');
-		}
-		$this->load->model([
-			'TryoutModel',
-			'TryoutSessionModel',
-			'TryoutQuestionModel',
-			'UserTryoutModel',
-			'UserAnswerModel',
-			'SessionResultModel',
-			'QuestionModel'
-		]);
-		$this->load->helper('form');
-	}
+    function __construct()
+    {
+        parent::__construct();
+        $this->load->model([
+            'UserTryoutModel',
+            'TryoutSessionModel',
+            'TryoutQuestionModel',
+            'QuestionModel',
+            'UserAnswerModel',
+            'EssayAnswerModel',
+        ]);
+        $this->load->library('form_validation');
+    }
 
-	public function start($tryout_id)
-	{
-		$user_id = $this->session->userdata('user')['id'];
-		// Cek apakah sudah ada tryout yang sedang berjalan
-		$active = $this->UserTryoutModel->getActiveUserTryout($user_id, $tryout_id);
-		if (!$active) {
-			// Buat record baru
-			$user_tryout_id = $this->UserTryoutModel->startTryout($user_id, $tryout_id);
-		} else {
-			$user_tryout_id = $active->id;
-		}
+    public function index()
+    {
+        $data = [
+            'app' => $this->app(),
+            'main_js' => $this->load_main_js('user_tryout'),
+            'title' => 'Daftar Try Out',
+        ];
 
-		// Ambil sesi pertama dari tryout ini
-		$first_session = $this->TryoutSessionModel->getFirstSession($tryout_id);
-		if (!$first_session) {
-			show_error('Try out ini belum memiliki sesi.');
-		}
+        $this->template->set('title', $data['title'] . ' | ' . $data['app']->app_name, TRUE);
+        $this->template->load_view('index', $data, TRUE);
+        $this->template->render();
+    }
 
-		// Redirect ke halaman sesi pertama
-		redirect("user_tryout/session/{$user_tryout_id}/{$first_session->id}");
-	}
+    public function play($id)
+    {
+        $user_tryout = $this->UserTryoutModel->getDetail(['id' => $id]);
+        
+        // Cek apakah user_tryout memiliki tryout_session_id
+        if ($user_tryout->tryout_session_id) {
+            $session = $this->TryoutSessionModel->getDetail(['id' => $user_tryout->tryout_session_id]);
+        } else {
+            // Jika tidak ada tryout_session_id, maka kita perlu mengambil sesi pertama dari tryout
+            $this->load->model('TryoutModel');
+            $tryout = $this->TryoutModel->getDetail(['id' => $user_tryout->tryout_id]);
+            $session = $this->TryoutSessionModel->getFirstSession($tryout->id);
+        }
 
-	public function session($user_tryout_id, $session_id)
-	{
-		$user_id = $this->session->userdata('user')['id'];
-		// Validasi kepemilikan user_tryout
-		$user_tryout = $this->UserTryoutModel->getDetail(['id' => $user_tryout_id, 'user_id' => $user_id]);
-		if (!$user_tryout) {
-			show_error('Akses ditolak.');
-		}
+        if (!$user_tryout || !$session) {
+            show_404();
+            return;
+        }
 
-		// Ambil data sesi
-		$session = $this->TryoutSessionModel->getDetail(['id' => $session_id]);
-		if (!$session) {
-			show_error('Sesi tidak ditemukan.');
-		}
+        // Ambil soal-soal untuk sesi ini
+        $questions = $this->TryoutQuestionModel->getQuestionsBySession($session->id, $session->is_random);
+        $total_questions = count($questions);
 
-		// Ambil daftar soal dalam sesi ini (urut)
-		$questions = $this->TryoutQuestionModel->getQuestionsBySession($session_id,true);
-		if (empty($questions)) {
-			show_error('Sesi ini belum memiliki soal.');
-		}
+        // Debug: cek apakah ada soal
+        if (empty($questions)) {
+            $this->session->set_flashdata('error', 'Tidak ada soal dalam sesi ini.');
+            redirect('tryout_list');
+            return;
+        }
 
-		// Ambil jawaban yang sudah disimpan user untuk sesi ini
-		$answers = $this->UserAnswerModel->getAnswersByUserTryoutAndSession($user_tryout_id, $session_id);
-		$answer_map = [];
-		foreach ($answers as $ans) {
-			$answer_map[$ans['question_id']] = $ans;
-		}
+        // Ambil jawaban yang sudah diberikan oleh pengguna
+        $answer_map = [];
+        
+        // Gunakan fungsi getAnswers yang sesuai dari model
+        $answers = $this->UserAnswerModel->getAnswers($user_tryout->id);
+        foreach ($answers as $answer) {
+            $answer_obj = (object)$answer;
+            $answer_map[$answer_obj->question_id] = $answer_obj;
+        }
+        
+        // Ambil jawaban esai yang sudah diberikan oleh pengguna
+        $essay_answers = $this->EssayAnswerModel->getAll(['user_tryout_id' => $user_tryout->id]);
+        foreach ($essay_answers as $answer) {
+            $answer_map[$answer->question_id] = $answer;
+        }
 
-		$data = [
-			'user_tryout' => $user_tryout,
-			'session' => $session,
-			'questions' => $questions,
-			'answer_map' => $answer_map,
-			'total_questions' => count($questions)
-		];
+        $data = [
+            'app' => $this->app(),
+            'main_js' => $this->load_main_js('user_tryout/views/main.js.php'),
+            'title' => $session->name,
+            'user_tryout' => $user_tryout,
+            'session' => $session,
+            'questions' => $questions,
+            'total_questions' => $total_questions,
+            'answer_map' => $answer_map,
+        ];
 
-		// $this->load->view('user_tryout/header', ['title' => $session->name]);
-		$this->load->view('user_tryout/play', $data);
-		// $this->load->view('user_tryout/footer');
-	}
+        // $this->template->set('title', $data['title'] . ' | ' . $data['app']->app_name, TRUE);
+        // $this->template->load_view('play', $data, TRUE);
+        // $this->template->render();
+		$this->load->view('play', $data);
+    }
 
-	public function ajax_save_answer()
-	{
-		$this->handle_ajax_request();
-		$user_tryout_id = $this->input->post('user_tryout_id');
-		$question_id = $this->input->post('question_id');
-		$answer = $this->input->post('answer');
-		$is_unsure = $this->input->post('is_unsure') ? 1 : 0;
+    public function submit_session($user_tryout_id, $session_id)
+    {
+        // Cek apakah kolom tryout_session_id ada di tabel
+        if ($this->UserTryoutModel->columnExists('tryout_session_id', 'user_tryouts')) {
+            // Hitung skor berdasarkan metode yang ditentukan di sesi
+            $score = $this->UserTryoutModel->calculateScore($user_tryout_id, $session_id);
+            
+            // Simpan skor ke database
+            $this->UserTryoutModel->completeTryout($user_tryout_id, $score);
+        } else {
+            // Jika kolom tidak ada, gunakan metode lama
+            $this->UserTryoutModel->completeTryout($user_tryout_id);
+        }
+        
+        redirect('user_tryout/result/' . $user_tryout_id);
+    }
 
-		// Validasi kepemilikan
-		$user_id = $this->session->userdata('user')['id'];
-		$user_tryout = $this->UserTryoutModel->getDetail(['id' => $user_tryout_id, 'user_id' => $user_id]);
-		if (!$user_tryout) {
-			echo json_encode(['status' => false, 'data' => 'Akses ditolak']);
-			return;
-		}
+    public function result($id)
+    {
+        // Tampilkan hasil tryout
+        $user_tryout = $this->UserTryoutModel->getDetail(['id' => $id]);
+        
+        // Cek apakah user_tryout memiliki tryout_session_id
+        if ($user_tryout->tryout_session_id) {
+            $session = $this->TryoutSessionModel->getDetail(['id' => $user_tryout->tryout_session_id]);
+        } else {
+            // Jika tidak ada tryout_session_id, maka kita perlu mengambil sesi pertama dari tryout
+            $this->load->model('TryoutModel');
+            $tryout = $this->TryoutModel->getDetail(['id' => $user_tryout->tryout_id]);
+            $session = $this->TryoutSessionModel->getFirstSession($tryout->id);
+        }
 
-		$this->UserAnswerModel->saveAnswer($user_tryout_id, $question_id, $answer, $is_unsure);
-		echo json_encode(['status' => true]);
-	}
+        if (!$user_tryout || !$session) {
+            show_404();
+            return;
+        }
 
-	public function ajax_mark_unsure()
-	{
-		$this->handle_ajax_request();
-		$user_tryout_id = $this->input->post('user_tryout_id');
-		$question_id = $this->input->post('question_id');
-		$is_unsure = $this->input->post('is_unsure') ? 1 : 0;
+        // Hitung skor jika belum dihitung sebelumnya
+        if ($user_tryout->total_score === null) {
+            // Cek apakah kolom tryout_session_id ada di tabel
+            if ($this->UserTryoutModel->columnExists('tryout_session_id', 'user_tryouts')) {
+                $score = $this->UserTryoutModel->calculateScore($user_tryout->id, $user_tryout->tryout_session_id);
+                $this->UserTryoutModel->completeTryout($user_tryout->id, $score);
+                
+                // Ambil ulang data untuk mendapatkan skor terbaru
+                $user_tryout = $this->UserTryoutModel->getDetail(['id' => $id]);
+            } else {
+                // Jika kolom tidak ada, gunakan metode lama
+                $this->UserTryoutModel->completeTryout($user_tryout->id);
+            }
+        }
 
-		$user_id = $this->session->userdata('user')['id'];
-		$user_tryout = $this->UserTryoutModel->getDetail(['id' => $user_tryout_id, 'user_id' => $user_id]);
-		if (!$user_tryout) {
-			echo json_encode(['status' => false, 'data' => 'Akses ditolak']);
-			return;
-		}
+        // Dapatkan sesi berikutnya (jika ada)
+        $next_session = $this->TryoutSessionModel->getNextSession($session->tryout_id, $session->id);
 
-		$this->UserAnswerModel->markUnsure($user_tryout_id, $question_id, $is_unsure);
-		echo json_encode(['status' => true]);
-	}
+        $data = [
+            'app' => $this->app(),
+            'title' => 'Hasil Try Out',
+            'user_tryout' => $user_tryout,
+            'session' => $session,
+            'next_session' => $next_session
+        ];
 
-	public function submit_session($user_tryout_id, $session_id)
-	{
-		$user_id = $this->session->userdata('user')['id'];
-		$user_tryout = $this->UserTryoutModel->getDetail(['id' => $user_tryout_id, 'user_id' => $user_id]);
-		if (!$user_tryout) {
-			show_error('Akses ditolak.');
-		}
+        $this->template->set('title', $data['title'] . ' | ' . $data['app']->app_name, TRUE);
+        $this->template->load_view('result', $data, TRUE);
+        $this->template->render();
+    }
 
-		// Hitung hasil sesi
-		$questions = $this->TryoutQuestionModel->getQuestionsBySession($session_id);
-		$answers = $this->UserAnswerModel->getAnswersByUserTryoutAndSession($user_tryout_id, $session_id);
-		$answer_map = [];
-		foreach ($answers as $a) {
-			$answer_map[$a['question_id']] = $a;
-		}
+    public function ajax_save_answer()
+    {
+        $this->handle_ajax_request();
 
-		$correct = 0;
-		$wrong = 0;
-		$skipped = 0;
-		foreach ($questions as $q) {
-			$question = $this->QuestionModel->getDetail(['id' => $q->question_id]);
-			if (isset($answer_map[$q->question_id])) {
-				$ans = $answer_map[$q->question_id];
-				if ($ans['answer'] === null) {
-					$skipped++;
-				} elseif ($ans['answer'] == $question->correct_option) {
-					$correct++;
-				} else {
-					$wrong++;
-				}
-			} else {
-				$skipped++;
-			}
-		}
+        $user_tryout_id = $this->input->post('user_tryout_id');
+        $question_id = $this->input->post('question_id');
+        $answer = $this->input->post('answer');
+        $is_unsure = $this->input->post('is_unsure') ?? 0;
 
-		// Simpan hasil sesi
-		$total = count($questions);
-		$score = ($total > 0) ? round(($correct / $total) * 100, 2) : 0;
-		$this->SessionResultModel->saveResult($user_tryout_id, $session_id, $correct, $wrong, $skipped, $score);
+        // Validasi input
+        if (!$user_tryout_id || !$question_id || !$answer) {
+            echo json_encode(['status' => false, 'message' => 'Parameter tidak lengkap']);
+            return;
+        }
 
-		// Cek apakah masih ada sesi berikutnya
-		$next_session = $this->TryoutSessionModel->getNextSession($user_tryout->tryout_id, $session_id);
-		if ($next_session) {
-			// Redirect ke sesi berikutnya
-			redirect("user_tryout/session/{$user_tryout_id}/{$next_session->id}");
-		} else {
-			// Semua sesi selesai, update user_tryout selesai
-			$this->UserTryoutModel->completeTryout($user_tryout_id, $score); // score total? perlu dihitung dari semua sesi
-			$total_score = $this->calculateTotalScore($user_tryout_id);
-			$this->UserTryoutModel->completeTryout($user_tryout_id, $total_score);
-			$this->updateRanking($user_tryout->tryout_id);
-			// redirect("user_tryout/finish/{$user_tryout_id}");
-			redirect("user_tryout/finish/{$user_tryout_id}");
-		}
-	}
+        // Simpan jawaban
+        $result = $this->UserAnswerModel->saveAnswer($user_tryout_id, $question_id, $answer, $is_unsure);
+        echo json_encode($result);
+    }
 
-	public function finish($user_tryout_id)
-	{
-		$user_id = $this->session->userdata('user')['id'];
-		$user_tryout = $this->UserTryoutModel->getDetail(['id' => $user_tryout_id, 'user_id' => $user_id]);
-		if (!$user_tryout) {
-			show_error('Akses ditolak.');
-		}
+    public function ajax_save_essay_answer()
+    {
+        $this->handle_ajax_request();
 
-		// Ambil hasil semua sesi
-		$results = $this->SessionResultModel->getByUserTryout($user_tryout_id);
-		$data['results'] = $results;
-		$data['user_tryout'] = $user_tryout;
+        $user_tryout_id = $this->input->post('user_tryout_id');
+        $question_id = $this->input->post('question_id');
+        $answer_text = $this->input->post('answer_text');
+        $is_unsure = $this->input->post('is_unsure') ?? 0;
 
-		$this->load->view('header', ['title' => 'Try Out Selesai']);
-		$this->load->view('finish', $data);
-		$this->load->view('footer');
-	}
+        // Validasi input
+        if (!$user_tryout_id || !$question_id) {
+            echo json_encode(['status' => false, 'message' => 'Parameter tidak lengkap']);
+            return;
+        }
 
-	/**
-	 * Hitung skor total dari semua sesi
-	 */
-	private function calculateTotalScore($user_tryout_id)
-	{
-		$this->load->model('SessionResultModel');
-		$results = $this->SessionResultModel->getByUserTryout($user_tryout_id);
-		if (empty($results)) return 0;
+        // Cek apakah sudah ada jawaban sebelumnya
+        $existing_answer = $this->EssayAnswerModel->getByUserTryoutAndQuestion($user_tryout_id, $question_id);
+        
+        if ($existing_answer) {
+            // Update jawaban yang sudah ada
+            $this->db->where('id', $existing_answer->id);
+            $this->db->update('essay_answers', [
+                'answer_text' => $answer_text,
+                'updated_at' => date('Y-m-d H:i:s')
+            ]);
+            
+            $result = ['status' => true, 'message' => 'Jawaban esai diperbarui'];
+        } else {
+            // Simpan jawaban baru
+            $this->db->insert('essay_answers', [
+                'user_tryout_id' => $user_tryout_id,
+                'question_id' => $question_id,
+                'answer_text' => $answer_text,
+                'is_unsure' => $is_unsure,
+                'created_at' => date('Y-m-d H:i:s')
+            ]);
+            
+            $result = ['status' => true, 'message' => 'Jawaban esai disimpan'];
+        }
 
-		$total = 0;
-		foreach ($results as $r) {
-			$total += $r->score;
-		}
-		// Rata-rata skor (atau bisa juga dijumlah, tergantung kebutuhan)
-		return round($total / count($results), 2);
-	}
+        echo json_encode($result);
+    }
 
-	/**
-	 * Update ranking nasional, sekolah, dan bimbel
-	 */
-	private function updateRanking($tryout_id)
-	{
-		// Ambil semua user_tryout untuk tryout ini dengan status completed, urut skor descending
-		$this->db->select('ut.id, ut.user_id, ut.total_score, u.unit as school_id')
-			->from('user_tryouts ut')
-			->join('user u', 'u.id = ut.user_id')
-			->where('ut.tryout_id', $tryout_id)
-			->where('ut.status', 'completed')
-			->order_by('ut.total_score', 'desc');
-		$query = $this->db->get();
-		$results = $query->result();
+    public function ajax_mark_unsure()
+    {
+        $this->handle_ajax_request();
 
-		// Ranking nasional
-		$rank_national = 1;
-		foreach ($results as $row) {
-			$this->db->where('id', $row->id)
-				->update('user_tryouts', ['ranking_national' => $rank_national]);
-			$rank_national++;
-		}
+        $user_tryout_id = $this->input->post('user_tryout_id');
+        $question_id = $this->input->post('question_id');
+        $is_unsure = $this->input->post('is_unsure');
 
-		// Ranking per sekolah
-		$schools = [];
-		foreach ($results as $row) {
-			$schools[$row->school_id][] = $row;
-		}
-		foreach ($schools as $school_id => $students) {
-			$rank_school = 1;
-			foreach ($students as $s) {
-				$this->db->where('id', $s->id)
-					->update('user_tryouts', ['ranking_school' => $rank_school]);
-				$rank_school++;
-			}
-		}
+        // Validasi input
+        if (!$user_tryout_id || !$question_id || !isset($is_unsure)) {
+            echo json_encode(['status' => false, 'message' => 'Parameter tidak lengkap']);
+            return;
+        }
 
-		// Jika ada bimbel (misal dari kolom sub_unit), bisa ditambahkan serupa
-	}
+        // Update status unsure di tabel jawaban
+        $this->db->where([
+            'user_tryout_id' => $user_tryout_id,
+            'question_id' => $question_id
+        ]);
+        $this->db->update('user_answers', ['is_unsure' => $is_unsure]);
 
-	/**
-	 * Ekspor hasil try out ke PDF
-	 */
-	public function export_pdf($user_tryout_id)
-	{
-		$user_id = $this->session->userdata('user')['id'];
-		$user_tryout = $this->UserTryoutModel->getDetail(['id' => $user_tryout_id, 'user_id' => $user_id]);
-		if (!$user_tryout) {
-			show_error('Akses ditolak.');
-		}
-
-		// Load data lengkap
-		$tryout = $this->TryoutModel->getDetail(['id' => $user_tryout->tryout_id]);
-		$user = $this->db->where('id', $user_id)->get('user')->row();
-
-		$this->load->model('TryoutSessionModel');
-		$this->load->model('SessionResultModel');
-		$this->load->model('TryoutQuestionModel');
-		$this->load->model('QuestionModel');
-		$this->load->model('UserAnswerModel');
-
-		$sessions = $this->TryoutSessionModel->getByTryout($tryout->id);
-		foreach ($sessions as $s) {
-			$s->result = $this->SessionResultModel->getByUserTryoutAndSession($user_tryout_id, $s->id);
-			$questions = $this->TryoutQuestionModel->getQuestionsBySession($s->id);
-			foreach ($questions as $q) {
-				$q->detail = $this->QuestionModel->getDetail(['id' => $q->question_id]);
-				$q->user_answer = $this->UserAnswerModel->getAnswer($user_tryout_id, $q->question_id);
-			}
-			$s->questions = $questions;
-		}
-
-		$data = [
-			'user_tryout' => $user_tryout,
-			'tryout' => $tryout,
-			'user' => $user,
-			'sessions' => $sessions
-		];
-
-		// Load view PDF
-		$html = $this->load->view('user_tryout/export_pdf', $data, true);
-
-		// Gunakan MPDF
-		require_once FCPATH . 'vendor/autoload.php'; // sudah di autoload oleh AppBackend, tapi pastikan
-		$mpdf = new \Mpdf\Mpdf([
-			'mode' => 'utf-8',
-			'format' => 'A4',
-			'orientation' => 'P'
-		]);
-		$mpdf->WriteHTML($html);
-		$mpdf->Output('hasil_tryout_' . $user_tryout_id . '.pdf', 'I'); // I = inline, D = download
-		exit;
-	}
-
-	private function handle_ajax_request()
-	{
-		if (!$this->input->is_ajax_request()) {
-			show_404();
-		}
-	}
+        echo json_encode(['status' => true, 'message' => 'Status ragu dirubah']);
+    }
+    
+    public function start($session_id)
+    {
+        $user_id = $this->session->userdata('user')['id'];
+        
+        // Pastikan sesi ini adalah bagian dari tryout yang dapat diakses oleh pengguna
+        $session = $this->TryoutSessionModel->getDetail(['id' => $session_id]);
+        if (!$session) {
+            show_404();
+            return;
+        }
+        
+        // Ambil tryout untuk memastikan pengguna memiliki akses
+        $this->load->model('TryoutModel');
+        $tryout = $this->TryoutModel->getDetail(['id' => $session->tryout_id]);
+        
+        $this->load->model('UserPackageModel');
+        $accessible_tryouts = $this->UserPackageModel->getAccessibleItems($user_id, 'tryout');
+        
+        if (!$tryout || !in_array($tryout->id, $accessible_tryouts)) {
+            $this->session->set_flashdata('error', 'Anda tidak memiliki akses ke tryout ini.');
+            redirect('tryout_list');
+            return;
+        }
+        
+        // Cek apakah kolom tryout_session_id ada di tabel
+        if ($this->UserTryoutModel->columnExists('tryout_session_id', 'user_tryouts')) {
+            // Mulai sesi
+            $user_tryout_id = $this->UserTryoutModel->startTryoutWithSession($user_id, $session_id);
+        } else {
+            // Jika kolom tidak ada, kembali ke metode lama
+            $user_tryout_id = $this->UserTryoutModel->startTryout($user_id, $tryout->id);
+        }
+        
+        // Jika user_tryout_id adalah 0, artinya gagal membuat entri
+        if ($user_tryout_id == 0) {
+            $this->session->set_flashdata('error', 'Gagal memulai tryout. Silakan coba lagi.');
+            redirect('tryout_list');
+            return;
+        }
+        
+        redirect('user_tryout/play/' . $user_tryout_id);
+    }
+    
+    public function start_next($prev_user_tryout_id, $next_session_id)
+    {
+        $user_id = $this->session->userdata('user')['id'];
+        
+        // Dapatkan informasi sesi sebelumnya
+        $prev_tryout = $this->UserTryoutModel->getDetail(['id' => $prev_user_tryout_id]);
+        
+        // Cek apakah kolom tryout_session_id ada
+        if ($prev_tryout->tryout_session_id) {
+            $prev_session = $this->TryoutSessionModel->getDetail(['id' => $prev_tryout->tryout_session_id]);
+        } else {
+            // Jika tidak ada tryout_session_id, maka kita perlu mengambil sesi pertama dari tryout
+            $this->load->model('TryoutModel');
+            $tryout = $this->TryoutModel->getDetail(['id' => $prev_tryout->tryout_id]);
+            $prev_session = $this->TryoutSessionModel->getFirstSession($tryout->id);
+        }
+        
+        $next_session = $this->TryoutSessionModel->getDetail(['id' => $next_session_id]);
+        
+        // Pastikan sesi berikutnya adalah bagian dari tryout yang sama dan merupakan sesi berikutnya secara urutan
+        if ($prev_session->tryout_id != $next_session->tryout_id) {
+            $this->session->set_flashdata('error', 'Akses tidak sah.');
+            redirect('tryout_list');
+            return;
+        }
+        
+        // Dapatkan sesi berikutnya yang seharusnya berdasarkan urutan
+        $expected_next_session = $this->TryoutSessionModel->getNextSession($prev_session->tryout_id, $prev_session->id);
+        
+        if (!$expected_next_session || $expected_next_session->id != $next_session_id) {
+            $this->session->set_flashdata('error', 'Akses tidak sah.');
+            redirect('tryout_list');
+            return;
+        }
+        
+        // Cek apakah kolom tryout_session_id ada di tabel
+        if ($this->UserTryoutModel->columnExists('tryout_session_id', 'user_tryouts')) {
+            // Mulai sesi berikutnya
+            $user_tryout_id = $this->UserTryoutModel->startTryoutWithSession($user_id, $next_session_id);
+        } else {
+            // Jika kolom tidak ada, kembali ke metode lama
+            $user_tryout_id = $this->UserTryoutModel->startTryout($user_id, $next_session_id);
+        }
+        
+        // Jika user_tryout_id adalah 0, artinya gagal membuat entri
+        if ($user_tryout_id == 0) {
+            $this->session->set_flashdata('error', 'Gagal memulai tryout. Silakan coba lagi.');
+            redirect('tryout_list');
+            return;
+        }
+        
+        redirect('user_tryout/play/' . $user_tryout_id);
+    }
+    
+    public function export_pdf($id)
+    {
+        $user_tryout = $this->UserTryoutModel->getDetail(['id' => $id]);
+        
+        if (!$user_tryout) {
+            show_404();
+            return;
+        }
+        
+        // Dapatkan session berdasarkan tryout_session_id
+        if ($user_tryout->tryout_session_id) {
+            $session = $this->TryoutSessionModel->getDetail(['id' => $user_tryout->tryout_session_id]);
+        } else {
+            $this->load->model('TryoutModel');
+            $tryout = $this->TryoutModel->getDetail(['id' => $user_tryout->tryout_id]);
+            $session = $this->TryoutSessionModel->getFirstSession($tryout->id);
+        }
+        
+        // Ambil soal-soal untuk sesi ini
+        $questions = $this->TryoutQuestionModel->getQuestionsBySession($session->id);
+        
+        // Ambil jawaban yang diberikan oleh pengguna
+        $answers = $this->UserAnswerModel->getAnswers($user_tryout->id);
+        $answer_map = [];
+        foreach ($answers as $answer) {
+            $answer_obj = (object)$answer;
+            $answer_map[$answer_obj->question_id] = $answer_obj;
+        }
+        
+        // Hitung jawaban benar menggunakan fungsi dari model
+        $correct_count = $this->UserTryoutModel->countCorrectAnswers($user_tryout->id, $session->id);
+        
+        // Siapkan data untuk PDF
+        $data = [
+            'user_tryout' => $user_tryout,
+            'session' => $session,
+            'questions' => $questions,
+            'answers' => $answer_map,
+            'correct_count' => $correct_count,
+        ];
+        
+        // Buat HTML untuk PDF
+        $html = $this->load->view('user_tryout/export_pdf_html', $data, true);
+        
+        // Generate PDF menggunakan fungsi dari AppBackend
+        $filename = 'hasil_tryout_' . $session->name . '_' . date('Y-m-d') . '.pdf';
+        $this->generatePDF($html, $filename);
+    }
 }

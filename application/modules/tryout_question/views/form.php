@@ -41,6 +41,13 @@
                         <small class="form-text text-muted">Urutan soal dimulai dari 1.</small>
                     </div>
 
+                    <div class="form-group">
+                        <label required>Poin Soal</label>
+                        <input type="number" name="points" class="form-control tryout_question-points" min="0.1" step="0.01" value="1.00" placeholder="Jumlah poin untuk soal ini" required />
+                        <i class="form-group__bar"></i>
+                        <small class="form-text text-muted">Jumlah poin untuk soal ini (minimal 0.1).</small>
+                    </div>
+
                     <small class="form-text text-muted">
                         Fields with red stars (<label required></label>) are required.
                     </small>

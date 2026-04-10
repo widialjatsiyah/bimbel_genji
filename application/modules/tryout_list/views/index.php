@@ -16,7 +16,36 @@
                             <p class="card-text"><?= $to->description ?></p>
                             <p><strong>Tipe:</strong> <?= $to->type ?></p>
                             <p><strong>Mode:</strong> <?= $to->mode ?></p>
-                            <a href="<?= base_url('user_tryout/start/'.$to->id) ?>" class="btn btn-primary">Mulai</a>
+                            
+                            <?php if (!empty($to->sessions)): ?>
+                                <div class="mt-3">
+                                    <p><strong>Sesi:</strong></p>
+                                    <ul class="list-unstyled">
+                                    <?php foreach ($to->sessions as $idx => $session): ?>
+                                        <li>
+                                            <i class="fa fa-circle text-<?php 
+                                                echo ($to->completed_sessions > $idx) ? 'success' : 'secondary'; 
+                                            ?>"></i> 
+                                            <?= $session->name ?> 
+                                            <?php if ($session->is_random == 1): ?>
+                                                <span class="badge bg-warning">Acak</span>
+                                            <?php endif; ?>
+                                            <span class="badge bg-info"><?= $session->scoring_method == 'correct_incorrect' ? 'Benar/Salah' : 'Poin per Soal' ?></span>
+                                        </li>
+                                    <?php endforeach; ?>
+                                    </ul>
+                                    
+                                    <?php if ($to->completed_sessions == 0): ?>
+                                        <a href="<?= base_url('tryout_list/start/'.$to->id) ?>" class="btn btn-primary">Mulai</a>
+                                    <?php elseif ($to->completed_sessions < count($to->sessions)): ?>
+                                        <a href="<?= base_url('tryout_list/start/'.$to->id) ?>" class="btn btn-warning">Lanjutkan</a>
+                                    <?php else: ?>
+                                        <span class="badge bg-success">Selesai</span>
+                                    <?php endif; ?>
+                                </div>
+                            <?php else: ?>
+                                <p class="text-muted">Tryout ini belum memiliki sesi.</p>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>

@@ -39,6 +39,65 @@
             font-size: 1.1rem;
             margin-bottom: 30px;
             line-height: 1.6;
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #0d6efd;
+        }
+        .options-list {
+            list-style: none;
+            padding: 0;
+        }
+        .options-list li {
+            margin-bottom: 15px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+        .options-list li:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            background: #e9ecef;
+        }
+        .options-list li.selected {
+            background: #cfe2ff;
+            border-color: #0d6efd;
+            box-shadow: 0 5px 15px rgba(13, 110, 253, 0.2);
+        }
+        .options-list li input[type="radio"] {
+            margin-right: 15px;
+            visibility: hidden;
+        }
+        .option-letter {
+            display: inline-block;
+            width: 35px;
+            height: 35px;
+            line-height: 35px;
+            text-align: center;
+            background: #0d6efd;
+            color: white;
+            border-radius: 50%;
+            margin-right: 15px;
+            font-weight: bold;
+        }
+        .option-content {
+            display: inline-block;
+            vertical-align: top;
+        }
+        .option-image {
+            margin-top: 10px;
+            text-align: center;
+        }
+        .option-image img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            border: 1px solid #ddd;
         }
         .nav-questions {
             background: white;
@@ -81,10 +140,6 @@
             background: #dc3545;
             color: white;
         }
-        .question-grid-item.current {
-            border: 3px solid #0d6efd;
-            transform: scale(1.05);
-        }
         .btn-unsure {
             background: #ffc107;
             color: black;
@@ -115,9 +170,80 @@
             font-weight: 500;
             margin-right: 10px;
         }
-        .essay-container {
-            display: none;
+        .question-group-header {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #0d6efd;
         }
+        .option-item.correct-answer {
+            background: #d4edda;
+            border: 2px solid #28a745;
+        }
+        .option-item.incorrect-answer {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+        }
+
+		<style>
+.options-list {
+    list-style: none;
+    padding: 0;
+}
+.options-list li {
+    margin-bottom: 15px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 2px solid transparent;
+    position: relative;
+    overflow: hidden;
+}
+.options-list li:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    background: #e9ecef;
+}
+.options-list li.selected {
+    background: #cfe2ff;
+    border-color: #0d6efd;
+    box-shadow: 0 5px 15px rgba(13, 110, 253, 0.2);
+}
+.options-list li input[type="radio"] {
+    margin-right: 15px;
+    visibility: hidden;
+    /* 隐藏原生的 radio button */
+}
+.option-letter {
+    display: inline-block;
+    width: 35px;
+    height: 35px;
+    line-height: 35px;
+    text-align: center;
+    background: #0d6efd;
+    color: white;
+    border-radius: 50%;
+    margin-right: 15px;
+    font-weight: bold;
+}
+.option-content {
+    display: inline-block;
+    vertical-align: top;
+}
+.option-image {
+    margin-top: 10px;
+    text-align: center;
+}
+.option-image img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+</style>
     </style>
 </head>
 <body>
@@ -145,21 +271,9 @@
                     <div class="question-text" id="question-text">
                         <!-- akan diisi JavaScript -->
                     </div>
-                    <div class="question-image" id="question-image-container" style="display: none;">
-                        <!-- Gambar soal akan ditampilkan di sini -->
-                    </div>
-                    
-                    <!-- Kontainer untuk pilihan ganda -->
                     <div class="options" id="options-container">
                         <!-- akan diisi JavaScript -->
                     </div>
-                    
-                    <!-- Kontainer untuk jawaban esai -->
-                    <div class="essay-container" id="essay-container">
-                        <label for="essay-answer">Jawaban Esai:</label>
-                        <textarea id="essay-answer" class="essay-answer-area" placeholder="Tulis jawaban esai Anda di sini..."></textarea>
-                    </div>
-                    
                     <div class="d-flex justify-content-between mt-4">
                         <div>
                             <button class="btn-unsure" id="btn-unsure">
@@ -214,70 +328,58 @@
             var timerInterval;
             var timeLeft = <?= $session->duration_minutes * 60 ?>; // detik
 
+            // Debug: Tampilkan jumlah soal di console
+            console.log("Jumlah soal:", totalQuestions);
+            console.log("Data soal:", questions);
+
             // Inisialisasi tampilan
             function renderQuestion(index) {
+                if (!questions[index]) {
+                    console.error("Soal pada index " + index + " tidak ditemukan");
+                    return;
+                }
+                
                 var q = questions[index];
-                var questionData = q; // karena sekarang data soal sudah digabungkan
+                var questionData = q; // Data soal sudah digabungkan di model
                 
-                // Tampilkan atau sembunyikan elemen berdasarkan jenis soal
-                if (questionData.question_type === 'essay') {
-                    $('#options-container').hide();
-                    $('#essay-container').show();
-                    
-                    // Isi jawaban esai jika sudah pernah dijawab sebelumnya
-                    var essayAnswer = answerMap[q.question_id];
-                    if (essayAnswer && essayAnswer.answer_text) {
-                        $('#essay-answer').val(essayAnswer.answer_text);
-                    } else {
-                        $('#essay-answer').val('');
-                    }
-                } else {
-                    $('#options-container').show();
-                    $('#essay-container').hide();
-                }
+                // Cek apakah soal ini bagian dari grup
+                var questionHtml = '';
                 
-                $('#question-text').html(questionData.question_text);
+                // Jika soal ini adalah soal pertama dalam grup (urutan 1), tampilkan header grup
+                // if (questionData.is_group_main) {
+                //     questionHtml += '<div class="question-group-header">';
+                //     questionHtml += '</div>';
+                // }
                 
-                // Tampilkan gambar soal jika ada
-                var questionImageContainer = $('#question-image-container');
+                questionHtml += questionData.question_text;
+                
+                // Tambahkan gambar soal jika ada
                 if (questionData.question_image) {
-                    questionImageContainer.html('<img src="<?= base_url() ?>' + questionData.question_image + '" alt="Gambar Soal" />');
-                    questionImageContainer.show();
-                } else {
-                    questionImageContainer.hide();
+                    questionHtml += '<div class="mb-3"><img src="' + questionData.question_image + '" class="img-fluid" alt="Gambar Soal" /></div>';
                 }
-
-                // Hanya tampilkan pilihan jawaban jika soal pilihan ganda
-                if (questionData.question_type !== 'essay') {
-                    var optionsHtml = '';
-                    var letters = ['A', 'B', 'C', 'D', 'E'];
-                    for (var i = 0; i < 5; i++) {
-                        var optText = questionData['option_' + letters[i].toLowerCase()];
+                
+                $('#question-text').html(questionHtml);
+                
+                var optionsHtml = '';
+				optionsHtml += '<ul class="options-list">';
+                var letters = ['A', 'B', 'C', 'D', 'E'];
+                for (var i = 0; i < 5; i++) {
+                    var opt = questionData['option_' + letters[i].toLowerCase()];
+                    if (opt) {
                         var optImage = questionData['option_' + letters[i].toLowerCase() + '_image'];
-                        
-                        if (optText || optImage) {
-                            var checked = (answerMap[q.question_id] && answerMap[q.question_id].answer === letters[i]) ? 'checked' : '';
-                            var isSelectedClass = checked ? 'selected' : '';
-                            
-                            var optionContent = '<div class="option-content">';
-                            if (optText) {
-                                optionContent += '<span class="option-text">' + optText + '</span>';
-                            }
-                            if (optImage) {
-                                optionContent += '<div class="option-image"><img src="<?= base_url() ?>' + optImage + '" alt="Gambar Opsi ' + letters[i] + '" /></div>';
-                            }
-                            optionContent += '</div>';
-                            
-                            optionsHtml += `
-                                <li class="option-item ${isSelectedClass}" data-option="${letters[i]}">
-                                    <input type="radio" name="option" value="${letters[i]}" ${checked} hidden>
-                                    <span class="option-letter">${letters[i]}.</span> ${optionContent}
-                                </li>
-                            `;
-                        }
+                        var checked = (answerMap[q.question_id] && answerMap[q.question_id].answer === letters[i]) ? 'checked' : '';
+                        var isSelected = (answerMap[q.question_id] && answerMap[q.question_id].answer === letters[i]) ? 'selected' : '';
+                        optionsHtml += `
+                            <li class="option-item ${isSelected}" data-option="${letters[i]}" data-question-id="${q.question_id}">
+                                <input type="radio" name="option" value="${letters[i]}" ${checked}>
+                                <span class="option-letter">${letters[i]}</span> ${opt}
+                                ${optImage ? '<div class="mt-2"><img src="' + optImage + '" class="img-fluid" style="max-width: 200px;" alt="Gambar Opsi" /></div>':''}
+                            </li>
+                        `;
                     }
-                    $('#options-container').html(optionsHtml);
                 }
+				optionsHtml += '</ul>';
+                $('#options-container').html(optionsHtml);
 
                 // Set status ragu
                 if (answerMap[q.question_id] && answerMap[q.question_id].is_unsure == 1) {
@@ -301,7 +403,7 @@
                     if (answerMap[qid]) {
                         if (answerMap[qid].is_unsure == 1) {
                             statusClass = 'unsure';
-                        } else if (answerMap[qid].answer || (answerMap[qid].answer_text && answerMap[qid].answer_text.trim() !== '')) {
+                        } else if (answerMap[qid].answer) {
                             statusClass = 'answered';
                         } else {
                             statusClass = 'skipped';
@@ -315,13 +417,15 @@
                 $('#question-grid').html(gridHtml);
             }
 
-            // Event klik option
+            // Event klik option - gunakan event delegation karena elemen dibuat secara dinamis
             $(document).on('click', '.option-item', function() {
                 var option = $(this).data('option');
-                var qid = questions[currentIndex].question_id;
+                var qid = $(this).data('question-id');
+                
                 // Hapus kelas selected dari semua option
                 $('.option-item').removeClass('selected');
                 $(this).addClass('selected');
+                
                 // Set radio
                 $(this).find('input[type="radio"]').prop('checked', true);
 
@@ -347,74 +451,24 @@
                 });
             });
 
-            // Event handler untuk jawaban esai
-            $('#essay-answer').on('input', function() {
-                var answer = $(this).val();
-                var qid = questions[currentIndex].question_id;
-                
-                // Simpan jawaban esai via AJAX
-                $.ajax({
-                    url: '<?= base_url("user_tryout/ajax_save_essay_answer") ?>',
-                    method: 'POST',
-                    data: {
-                        user_tryout_id: userTryoutId,
-                        question_id: qid,
-                        answer_text: answer,
-                        is_unsure: $('#btn-unsure').hasClass('active') ? 1 : 0
-                    },
-                    success: function(res) {
-                        if (res.status) {
-                            // Update answerMap
-                            if (!answerMap[qid]) answerMap[qid] = {};
-                            answerMap[qid].answer_text = answer;
-                            answerMap[qid].is_unsure = $('#btn-unsure').hasClass('active') ? 1 : 0;
-                            updateGrid();
-                        }
-                    }
-                });
-            });
-
             // Tombol ragu-ragu
             $('#btn-unsure').click(function() {
                 $(this).toggleClass('active');
                 var qid = questions[currentIndex].question_id;
                 var isUnsure = $(this).hasClass('active') ? 1 : 0;
 
-                var endpoint = (questions[currentIndex].question_type === 'essay') ? 
-                    '<?= base_url("user_tryout/ajax_save_essay_answer") ?>' : 
-                    '<?= base_url("user_tryout/ajax_save_answer") ?>';
-                
-                var requestData = {
-                    user_tryout_id: userTryoutId,
-                    question_id: qid,
-                    is_unsure: isUnsure
-                };
-                
-                // Tambahkan data jawaban jika soal esai
-                if (questions[currentIndex].question_type === 'essay') {
-                    requestData.answer_text = $('#essay-answer').val();
-                } else {
-                    // Untuk soal pilihan ganda, kirim jawaban jika ada
-                    var selectedOption = $('input[name="option"]:checked').val();
-                    if (selectedOption) {
-                        requestData.answer = selectedOption;
-                    }
-                }
-
                 $.ajax({
-                    url: endpoint,
+                    url: '<?= base_url("user_tryout/ajax_mark_unsure") ?>',
                     method: 'POST',
-                    data: requestData,
+                    data: {
+                        user_tryout_id: userTryoutId,
+                        question_id: qid,
+                        is_unsure: isUnsure
+                    },
                     success: function(res) {
                         if (res.status) {
                             if (!answerMap[qid]) answerMap[qid] = {};
                             answerMap[qid].is_unsure = isUnsure;
-                            
-                            // Update jawaban
-                            if (!answerMap[qid]) answerMap[qid] = {};
-                            answerMap[qid].answer = option;
-                            answerMap[qid].is_unsure = $('#btn-unsure').hasClass('active') ? 1 : 0;
-                            
                             updateGrid();
                         }
                     }

@@ -12,6 +12,7 @@
             </div>
 
             <?php include_once('form.php') ?>
+            <?php include_once('manage_questions.php') ?>
 
             <div class="table-responsive">
                 <table id="table-tryout_session" class="table table-bordered">
@@ -23,8 +24,10 @@
                             <th>Urutan</th>
                             <th>Durasi (menit)</th>
                             <th>Jumlah Soal</th>
+                            <th>Acak Soal</th>
+                            <th>Metode Skor</th>
                             <th>Deskripsi</th>
-                            <th width="170" class="text-center">#</th>
+                            <th width="220" class="text-center">#</th>
                         </tr>
                     </thead>
                 </table>

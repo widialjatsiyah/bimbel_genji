@@ -22,6 +22,11 @@ class TryoutQuestionModel extends CI_Model
 				'field' => 'question_order',
 				'label' => 'Urutan Soal',
 				'rules' => 'required|integer'
+			],
+			[
+				'field' => 'points',
+				'label' => 'Poin Soal',
+				'rules' => 'required|numeric|greater_than[0]'
 			]
 		);
 	}
@@ -48,6 +53,7 @@ class TryoutQuestionModel extends CI_Model
 			$this->tryout_session_id = $this->input->post('tryout_session_id');
 			$this->question_id = $this->input->post('question_id');
 			$this->question_order = $this->input->post('question_order');
+			$this->points = $this->input->post('points') ?: 1.00;
 			$this->db->insert($this->_table, $this);
 			$response = array('status' => true, 'data' => 'Soal berhasil ditambahkan ke sesi.');
 		} catch (\Throwable $th) {
@@ -63,6 +69,7 @@ class TryoutQuestionModel extends CI_Model
 			$this->tryout_session_id = $this->input->post('tryout_session_id');
 			$this->question_id = $this->input->post('question_id');
 			$this->question_order = $this->input->post('question_order');
+			$this->points = $this->input->post('points') ?: 1.00;
 			$this->db->update($this->_table, $this, array('id' => $id));
 			$response = array('status' => true, 'data' => 'Data soal sesi berhasil diperbarui.');
 		} catch (\Throwable $th) {
@@ -85,15 +92,94 @@ class TryoutQuestionModel extends CI_Model
 
 	public function getQuestionsBySession($session_id, $random = false)
 	{
-		$this->db->select('tq.*, q.question_text, q.question_type, q.question_image, q.expected_keywords, q.min_keyword_matches, q.option_a, q.option_a_image, q.option_b, q.option_b_image, q.option_c, q.option_c_image, q.option_d, q.option_d_image, q.option_e, q.option_e_image, q.correct_option, q.explanation')
+		$this->db->select('tq.*, q.question_text, q.question_type, q.question_image, q.expected_keywords, q.min_keyword_matches, q.option_a, q.option_a_image, q.option_b, q.option_b_image, q.option_c, q.option_c_image, q.option_d, q.option_d_image, q.option_e, q.option_e_image, q.correct_option, q.explanation, q.group_id, q.group_order, q.is_group_main')
 			->from('tryout_questions tq')
 			->join('questions q', 'q.id = tq.question_id')
 			->where('tq.tryout_session_id', $session_id);
+			
 		if ($random) {
-			$this->db->order_by('RAND()');
+			// Untuk soal acak, kita perlu mengelompokkan soal berdasarkan group_id
+			// dan memastikan soal dalam grup yang sama tetap berurutan
+			$questions = $this->db->get()->result();
+			
+			// Kelompokkan soal berdasarkan group_id
+			$grouped_questions = [];
+			$ungrouped_questions = [];
+			
+			foreach ($questions as $question) {
+				if ($question->group_id !== null) {
+					if (!isset($grouped_questions[$question->group_id])) {
+						$grouped_questions[$question->group_id] = [];
+					}
+					$grouped_questions[$question->group_id][] = $question;
+				} else {
+					$ungrouped_questions[] = $question;
+				}
+			}
+			
+			// Acak urutan grup dan soal non-grup
+			shuffle($ungrouped_questions);
+			$group_keys = array_keys($grouped_questions);
+			shuffle($group_keys);
+			
+			// Gabungkan hasilnya
+			$result = $ungrouped_questions;
+			
+			// Tambahkan soal-soal berkelompok, dengan tetap menjaga urutan dalam grup
+			foreach ($group_keys as $groupId) {
+				// Urutkan soal dalam grup sesuai group_order
+				usort($grouped_questions[$groupId], function($a, $b) {
+					return $a->group_order - $b->group_order;
+				});
+				
+				// Tambahkan ke hasil
+				foreach ($grouped_questions[$groupId] as $q) {
+					$result[] = $q;
+				}
+			}
+			
+			return $result;
 		} else {
 			$this->db->order_by('tq.question_order', 'asc');
+			return $this->db->get()->result();
 		}
-		return $this->db->get()->result();
+	}
+	
+	/**
+	 * Check if a question already exists in a session
+	 */
+	public function questionExistsInSession($session_id, $question_id)
+	{
+		$this->db->where('tryout_session_id', $session_id);
+		$this->db->where('question_id', $question_id);
+		$query = $this->db->get($this->_table);
+		
+		return $query->num_rows() > 0;
+	}
+	
+	/**
+	 * Get the highest question order in a session
+	 */
+	public function getMaxQuestionOrder($session_id)
+	{
+		$this->db->select_max('question_order');
+		$this->db->where('tryout_session_id', $session_id);
+		$result = $this->db->get($this->_table)->row();
+		
+		return $result->question_order ? $result->question_order : 0;
+	}
+	
+	/**
+	 * Update points for a specific question in a session
+	 */
+	public function updatePoints($session_id, $question_id, $points)
+	{
+		$data = array(
+			'points' => $points
+		);
+		
+		$this->db->where('tryout_session_id', $session_id);
+		$this->db->where('question_id', $question_id);
+		return $this->db->update($this->_table, $data);
 	}
 }

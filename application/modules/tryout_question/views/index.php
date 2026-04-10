@@ -6,7 +6,7 @@
             <div class="table-action">
                 <div class="buttons">
                     <button class="btn btn--raised btn-primary btn--icon-text tryout_question-action-add" data-toggle="modal" data-target="#modal-form-tryout_question">
-                        <i class="zmdi zmdi-plus-circle"></i> Tambah Soal ke Sesi
+                        <i class="zmdi zmdi-plus-circle"></i> Tambah Soal
                     </button>
                 </div>
             </div>
@@ -18,13 +18,11 @@
                     <thead class="thead-default">
                         <tr>
                             <th width="50">No</th>
-                            <th>Try Out</th>
-                            <th>Sesi</th>
-                            <th>Urutan Sesi</th>
+                            <th>Sesi Try Out</th>
                             <th>Soal</th>
-                            <th>Mata Pelajaran</th>
-                            <th>Urutan Soal</th>
-                            <th width="170" class="text-center">#</th>
+                            <th>Urutan</th>
+                            <th>Poin</th>
+                            <th width="220" class="text-center">#</th>
                         </tr>
                     </thead>
                 </table>
