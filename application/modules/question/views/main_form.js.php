@@ -1,4 +1,3 @@
-
 <script type="text/javascript">
     $(document).ready(function() {
         var _key = "<?php echo $this->uri->segment(3); ?>"; // Get ID from URL segment

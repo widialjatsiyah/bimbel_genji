@@ -49,7 +49,8 @@ class Tryout_session extends AppBackend
                 'tryouts.title as tryout_title',
                 'tryout_sessions.tryout_id',
                 'tryout_sessions.is_random',
-                'tryout_sessions.scoring_method'
+                'tryout_sessions.scoring_method',
+				'tryout_sessions.enable_time_per_question',
             ],
             'table_name' => 'tryout_sessions',
             'table_join' => [
@@ -274,6 +275,28 @@ class Tryout_session extends AppBackend
             echo json_encode(array('status' => true, 'data' => 'Poin soal berhasil diperbarui.'));
         } else {
             echo json_encode(array('status' => false, 'data' => 'Gagal memperbarui poin soal.'));
+        }
+    }
+    
+    public function ajax_update_question_time_limit()
+    {
+        $this->handle_ajax_request();
+        
+        $session_id = $this->input->post('session_id');
+        $question_id = $this->input->post('question_id');
+        $time_limit = $this->input->post('time_limit');
+        
+        if (!$session_id || !$question_id || !isset($time_limit)) {
+            echo json_encode(array('status' => false, 'data' => 'Parameter tidak lengkap.'));
+            return;
+        }
+        
+        $result = $this->TryoutQuestionModel->updateTimeLimit($session_id, $question_id, $time_limit);
+        
+        if ($result) {
+            echo json_encode(array('status' => true, 'data' => 'Batas waktu soal berhasil diperbarui.'));
+        } else {
+            echo json_encode(array('status' => false, 'data' => 'Gagal memperbarui batas waktu soal.'));
         }
     }
 }

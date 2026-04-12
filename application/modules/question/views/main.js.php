@@ -41,7 +41,12 @@
                         var res = JSON.parse(response);
                         if(res.status) {
                             $('.question-image-hidden').val(res.path);
+                        } else {
+                            notify('Gagal mengupload gambar: ' + res.error, 'danger');
                         }
+                    },
+                    error: function() {
+                        notify('Terjadi kesalahan saat upload gambar', 'danger');
                     }
                 });
             }
@@ -66,7 +71,12 @@
                         var res = JSON.parse(response);
                         if(res.status) {
                             $('.option_a_image-hidden').val(res.path);
+                        } else {
+                            notify('Gagal mengupload gambar: ' + res.error, 'danger');
                         }
+                    },
+                    error: function() {
+                        notify('Terjadi kesalahan saat upload gambar', 'danger');
                     }
                 });
             }
@@ -91,7 +101,12 @@
                         var res = JSON.parse(response);
                         if(res.status) {
                             $('.option_b_image-hidden').val(res.path);
+                        } else {
+                            notify('Gagal mengupload gambar: ' + res.error, 'danger');
                         }
+                    },
+                    error: function() {
+                        notify('Terjadi kesalahan saat upload gambar', 'danger');
                     }
                 });
             }
@@ -116,7 +131,12 @@
                         var res = JSON.parse(response);
                         if(res.status) {
                             $('.option_c_image-hidden').val(res.path);
+                        } else {
+                            notify('Gagal mengupload gambar: ' + res.error, 'danger');
                         }
+                    },
+                    error: function() {
+                        notify('Terjadi kesalahan saat upload gambar', 'danger');
                     }
                 });
             }
@@ -141,7 +161,12 @@
                         var res = JSON.parse(response);
                         if(res.status) {
                             $('.option_d_image-hidden').val(res.path);
+                        } else {
+                            notify('Gagal mengupload gambar: ' + res.error, 'danger');
                         }
+                    },
+                    error: function() {
+                        notify('Terjadi kesalahan saat upload gambar', 'danger');
                     }
                 });
             }
@@ -166,7 +191,12 @@
                         var res = JSON.parse(response);
                         if(res.status) {
                             $('.option_e_image-hidden').val(res.path);
+                        } else {
+                            notify('Gagal mengupload gambar: ' + res.error, 'danger');
                         }
+                    },
+                    error: function() {
+                        notify('Terjadi kesalahan saat upload gambar', 'danger');
                     }
                 });
             }

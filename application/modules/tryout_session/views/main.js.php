@@ -10,6 +10,18 @@
         var _manageQuestionsForm = "form-manage-questions";
         var _questionsTable = "table-session-questions";
 
+        // Initialize toggle visibility for time_per_question field
+        $(document).on('change', 'input[name="enable_time_per_question"]', function() {
+            if ($(this).is(':checked')) {
+                $('#time_per_question_container').show();
+            } else {
+                $('#time_per_question_container').hide();
+            }
+        });
+        
+        // Trigger change event on page load to set initial state
+        $('input[name="enable_time_per_question"]').trigger('change');
+
         // Initialize DataTables
         if ($("#" + _table)[0]) {
             var table_tryout_session = $("#" + _table).DataTable({
@@ -56,6 +68,16 @@
                                     return 'Poin per Soal';
                                 default:
                                     return data;
+                            }
+                        }
+                    },
+                    {
+                        data: "enable_time_per_question",
+                        render: function(data, type, row) {
+                            if (data == 1) {
+                                return 'Ya';
+                            } else {
+                                return 'Tidak';
                             }
                         }
                     },
@@ -236,6 +258,23 @@
             
             // Set scoring method radio button
             $(`#${_form} input[name="scoring_method"][value="${temp.scoring_method}"]`).prop('checked', true);
+            
+            // Set enable_time_per_question checkbox
+            if(temp.enable_time_per_question == 1) {
+                $(`#${_form} .tryout_session-enable_time_per_question`).prop('checked', true);
+            } else {
+                $(`#${_form} .tryout_session-enable_time_per_question`).prop('checked', false);
+            }
+            
+            // Set time_per_question value
+            $(`#${_form} .tryout_session-time_per_question`).val(temp.time_per_question);
+            
+            // Update toggle visibility based on stored value
+            if(temp.enable_time_per_question == 1) {
+                $('#time_per_question_container').show();
+            } else {
+                $('#time_per_question_container').hide();
+            }
         });
 
         // Handle manage questions
@@ -309,6 +348,13 @@
                             }
                         },
                         {
+                            data: "time_limit",
+                            render: function(data, type, row) {
+                                // Create input field for time limit
+                                return '<input type="number" min="0" class="form-control input-time-limit" data-session-id="' + $("#current_session_id").val() + '" data-question-id="' + row.question_id + '" value="' + (data || 0) + '" style="width: 120px;" placeholder="Detik (0=tanpa batas)"> <small class="text-muted">detik</small>';
+                            }
+                        },
+                        {
                             className: "center",
                             defaultContent: '<div class="action">' +
                                 '<a href="javascript:;" class="btn btn-sm btn-danger btn-table-action action-delete-question"><i class="zmdi zmdi-delete"></i></a>' +
@@ -349,6 +395,35 @@
                         },
                         error: function() {
                             notify("Terjadi kesalahan saat memperbarui poin soal", "danger");
+                        }
+                    });
+                });
+                
+                // Handle time limit input change
+                $('#' + _questionsTable).on('change', '.input-time-limit', function() {
+                    var sessionId = $(this).data('session-id');
+                    var questionId = $(this).data('question-id');
+                    var timeLimit = parseInt($(this).val()) || 0;
+                    
+                    $.ajax({
+                        type: "post",
+                        url: "<?php echo base_url('tryout_session/ajax_update_question_time_limit/') ?>",
+                        data: {
+                            session_id: sessionId,
+                            question_id: questionId,
+                            time_limit: timeLimit,
+                            '<?php echo $this->security->get_csrf_token_name(); ?>' : '<?php echo $this->security->get_csrf_hash(); ?>'
+                        },
+                        dataType: "json",
+                        success: function(response) {
+                            if (response.status) {
+                                notify(response.data, "success");
+                            } else {
+                                notify(response.data, "danger");
+                            }
+                        },
+                        error: function() {
+                            notify("Terjadi kesalahan saat memperbarui batas waktu soal", "danger");
                         }
                     });
                 });
@@ -504,6 +579,9 @@
             $(`#${_form} .tryout_session-tryout_id`).val('').trigger('change');
             $(`#${_form} .tryout_session-is_random`).prop('checked', false);
             $(`#${_form} input[name="scoring_method"][value="correct_incorrect"]`).prop('checked', true);
+            $(`#${_form} .tryout_session-enable_time_per_question`).prop('checked', false);
+            $('#time_per_question_container').hide();
+            $(`#${_form} .tryout_session-time_per_question`).val(60);
         };
 
     });

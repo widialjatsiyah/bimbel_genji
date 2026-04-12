@@ -1,13 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hasil Try Out - <?= $session->name ?></title>
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
     <style>
         body {
             background-color: #f4f7fc;
@@ -68,8 +59,6 @@
             margin-bottom: 20px;
         }
     </style>
-</head>
-<body>
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-md-8">
@@ -107,31 +96,68 @@
                     </div>
                     
                     <div class="text-center mt-4">
-                        <a href="<?= base_url('user_tryout/export_pdf/'.$user_tryout->id) ?>" class="btn btn-export-pdf">
-                            <i class="fas fa-file-pdf"></i> Ekspor ke PDF
-                        </a>
-                        
-                        <a href="<?= base_url('tryout_list') ?>" class="btn btn-home">
-                            <i class="fas fa-home"></i> Kembali ke Daftar Try Out
-                        </a>
-                        
-                        <?php if ($next_session): ?>
-                            <a href="<?= base_url('user_tryout/start_next/'.$user_tryout->id.'/'.$next_session->id) ?>" class="btn btn-next">
-                                <i class="fas fa-arrow-right"></i> Lanjut ke <?= $next_session->name ?>
-                            </a>
-                        <?php else: ?>
-                            <p class="mt-3 text-success">🎉 Selamat! Anda telah menyelesaikan semua sesi untuk tryout ini.</p>
-                        <?php endif; ?>
-                    </div>
+
+    <div class="d-flex flex-wrap justify-content-center gap-2">
+
+        <!-- Export PDF -->
+        <a href="<?= base_url('user_tryout/export_pdf/'.$user_tryout->id) ?>" 
+           class="btn btn-danger px-3">
+
+            <i class="zmdi zmdi-file-pdf"></i>
+            Ekspor PDF
+
+        </a>
+
+
+        <!-- Bookmark -->
+        <a href="<?= base_url('bookmark') ?>" 
+           class="btn btn-warning px-3">
+
+            <i class="zmdi zmdi-bookmark"></i>
+            Bookmark
+
+        </a>
+
+
+        <!-- Kembali -->
+        <a href="<?= base_url('tryout_list') ?>" 
+           class="btn btn-secondary px-3">
+
+            <i class="zmdi zmdi-home"></i>
+            Daftar Try Out
+
+        </a>
+
+
+        <!-- Next Session -->
+        <?php if ($next_session): ?>
+
+            <a href="<?= base_url('user_tryout/start_next/'.$user_tryout->id.'/'.$next_session->id) ?>" 
+               class="btn btn-primary px-3">
+
+                <i class="zmdi zmdi-arrow-right"></i>
+                Lanjut ke <?= $next_session->name ?>
+
+            </a>
+
+        <?php else: ?>
+
+            <div class="w-100 mt-3">
+
+                <p class="text-success fw-bold">
+                    🎉 Selamat! Anda telah menyelesaikan semua sesi.
+                </p>
+
+            </div>
+
+        <?php endif; ?>
+
+    </div>
+
+</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
-        // Tidak perlu logika tambahan untuk halaman hasil
-    </script>
-</body>
-</html>
+    

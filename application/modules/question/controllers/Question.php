@@ -2,52 +2,67 @@
 defined('BASEPATH') or exit('No direct script access allowed');
 require_once(APPPATH . 'controllers/AppBackend.php');
 
+/**
+ * Controller for managing questions in the application
+ * Handles CRUD operations, AJAX requests, and file uploads for questions
+ */
 class Question extends AppBackend
 {
+    /**
+     * Constructor to initialize required models and libraries
+     */
     function __construct()
     {
         parent::__construct();
-        $this->load->model(array(
+        $this->load->model([
             'AppModel',
             'QuestionModel',
             'SubjectModel',
             'ChapterModel',
             'TopicModel'
-        ));
+        ]);
         $this->load->library('form_validation');
     }
 
+    /**
+     * Default method to display the questions management interface
+     */
     public function index()
     {
-        // Ambil data untuk dropdown
+        // Get data for dropdowns
         $subjects = $this->SubjectModel->getAll([], 'name', 'asc');
         $list_subject = $this->init_list($subjects, 'id', 'name');
 
-        $data = array(
+        $data = [
             'app' => $this->app(),
             'main_js' => $this->load_main_js('question'),
             'card_title' => 'Bank Soal',
             'list_subject' => $list_subject,
-        );
+        ];
+        
         $this->template->set('title', $data['card_title'] . ' | ' . $data['app']->app_name, TRUE);
         $this->template->load_view('index', $data, TRUE);
         $this->template->render();
     }
 
+    /**
+     * Display the form for creating or editing a question
+     * @param null $id The ID of the question to edit
+     */
     public function form($id = null)
     {
         $subjects = $this->SubjectModel->getAll([], 'name', 'asc');
         $list_subject = $this->init_list($subjects, 'id', 'name');
         
-        $data = array(
+        $data = [
             'app' => $this->app(),
-            'main_js' => $this->load_main_js('question/views/main_form.js.php',true),
+            'main_js' => $this->load_main_js('question/views/main_form.js.php', true),
             'card_title' => ($id) ? 'Ubah Soal' : 'Tambah Soal',
             'list_subject' => $list_subject,
             'question_data' => null
-        );
+        ];
         
-        // Jika edit, ambil data question
+        // If editing, get question data
         if ($id) {
             $question = $this->QuestionModel->getById($id);
             if ($question) {
@@ -60,12 +75,15 @@ class Question extends AppBackend
         $this->template->render();
     }
 
+    /**
+     * Handle AJAX request to get all questions with DataTables integration
+     */
     public function ajax_get_all()
     {
         $this->handle_ajax_request();
 
-        // Konfigurasi DataTables dengan join ke subjects, chapters, topics
-        $dtAjax_config = array(
+        // DataTables configuration with joins to related tables
+        $dtAjax_config = [
             'select_column' => [
                 'questions.id',
                 'questions.question_text',
@@ -100,13 +118,18 @@ class Question extends AppBackend
                     'type' => 'left'
                 ]
             ],
-            'order_column' => 9, // kolom created_at
+            'order_column' => 9, // created_at column
             'order_column_dir' => 'desc',
-        );
+        ];
+        
         $response = $this->AppModel->getData_dtAjax($dtAjax_config);
         echo json_encode($response);
     }
 
+    /**
+     * Handle AJAX request to save a question (create or update)
+     * @param null $id The ID of the question to update
+     */
     public function ajax_save($id = null)
     {
         $this->handle_ajax_request();
@@ -120,11 +143,11 @@ class Question extends AppBackend
         } else {
             // Atur aturan validasi berbeda jika menggunakan gambar
             $use_images = $this->input->post('question_image') || 
-                          $this->input->post('option_a_image') || 
-                          $this->input->post('option_b_image') || 
-                          $this->input->post('option_c_image') || 
-                          $this->input->post('option_d_image') || 
-                          $this->input->post('option_e_image');
+                          $this->input->post('option_a') || 
+                          $this->input->post('option_b') || 
+                          $this->input->post('option_c') || 
+                          $this->input->post('option_d') || 
+                          $this->input->post('option_e');
             
             if ($use_images) {
                 $this->form_validation->set_rules($this->QuestionModel->rulesWithImage());
@@ -134,6 +157,35 @@ class Question extends AppBackend
         }
 
         if ($this->form_validation->run() === true) {
+            // Handle image uploads
+            $this->load->library('CpUpload');
+            
+            // Handle question image upload
+            if (!empty($_FILES['question_image_file']['name'])) {
+                $upload = $this->QuestionModel->handleImageUpload('question_image_file', 'question_image', 'questions');
+                if (!$upload['status']) {
+                    echo json_encode(['status' => false, 'data' => $upload['data']]);
+                    return;
+                }
+            }
+            
+            // Handle option image uploads if option type is image
+            if ($this->input->post('option_type') === 'image') {
+                $option_fields = ['option_a_file', 'option_b_file', 'option_c_file', 'option_d_file', 'option_e_file'];
+                foreach ($option_fields as $field) {
+                    if (!empty($_FILES[$field]['name'])) {
+                        $upload = $this->QuestionModel->handleImageUpload($field, str_replace('_file', '', $field), 'questions');
+                        if ($upload['status']) {
+                            // Update the post data to use the uploaded image path
+                            $_POST[str_replace('_file', '', $field)] = $upload['data']->base_path;
+                        } else {
+                            echo json_encode(['status' => false, 'data' => $upload['data']]);
+                            return;
+                        }
+                    }
+                }
+            }
+
             if (is_null($id)) {
                 echo json_encode($this->QuestionModel->insert());
             } else {
@@ -145,13 +197,19 @@ class Question extends AppBackend
         }
     }
 
+    /**
+     * Handle AJAX request to delete a question
+     * @param $id The ID of the question to delete
+     */
     public function ajax_delete($id)
     {
         $this->handle_ajax_request();
         echo json_encode($this->QuestionModel->delete($id));
     }
 
-    // Ajax untuk mendapatkan chapters berdasarkan subject (chained dropdown)
+    /**
+     * AJAX method to get chapters based on selected subject (for chained dropdown)
+     */
     public function ajax_get_chapters()
     {
         $this->handle_ajax_request();
@@ -160,7 +218,9 @@ class Question extends AppBackend
         echo json_encode($chapters);
     }
 
-    // Ajax untuk mendapatkan topics berdasarkan chapter (chained dropdown)
+    /**
+     * AJAX method to get topics based on selected chapter (for chained dropdown)
+     */
     public function ajax_get_topics()
     {
         $this->handle_ajax_request();
@@ -169,28 +229,21 @@ class Question extends AppBackend
         echo json_encode($topics);
     }
     
-    // Fungsi untuk upload gambar
+    /**
+     * Method for image upload functionality
+     */
     public function upload_image()
     {
         $this->handle_ajax_request();
         
-        $config['upload_path'] = './uploads/questions/';
-        $config['allowed_types'] = 'jpg|png|jpeg|gif';
-        $config['max_size'] = 2048; // 2MB
+        $this->load->library('CpUpload');
         
-        // Buat folder jika belum ada
-        if (!is_dir($config['upload_path'])) {
-            mkdir($config['upload_path'], 0755, true);
-        }
+        $upload = $this->QuestionModel->handleImageUpload('image', 'temp', 'questions');
         
-        $this->load->library('upload', $config);
-        
-        if (!$this->upload->do_upload('image')) {
-            echo json_encode(['status' => false, 'error' => $this->upload->display_errors()]);
+        if ($upload['status']) {
+            echo json_encode(['status' => true, 'path' => $upload['data']->base_path]);
         } else {
-            $upload_data = $this->upload->data();
-            $path = 'uploads/questions/' . $upload_data['file_name'];
-            echo json_encode(['status' => true, 'path' => $path]);
+            echo json_encode(['status' => false, 'error' => $upload['data']]);
         }
     }
 }

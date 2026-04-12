@@ -60,8 +60,9 @@
                             <thead class="thead-default">
                                 <tr>
                                     <th width="10%">No</th>
-                                    <th width="75%">Isi Soal</th>
+                                    <th width="50%">Isi Soal</th>
                                     <th>Nilai</th>
+                                    <th>Batas Waktu</th>
                                     <th width="100" class="text-center">#</th>
                                 </tr>
                             </thead>

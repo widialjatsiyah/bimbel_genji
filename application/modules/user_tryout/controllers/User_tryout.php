@@ -14,6 +14,7 @@ class User_tryout extends AppBackend
             'QuestionModel',
             'UserAnswerModel',
             'EssayAnswerModel',
+            'BookmarkModel',
         ]);
         $this->load->library('form_validation');
     }
@@ -33,65 +34,118 @@ class User_tryout extends AppBackend
 
     public function play($id)
     {
+        // Ambil data user_tryout
         $user_tryout = $this->UserTryoutModel->getDetail(['id' => $id]);
         
-        // Cek apakah user_tryout memiliki tryout_session_id
+        if (!$user_tryout) {
+            show_404('User tryout tidak ditemukan');
+            return;
+        }
+
+        // Dapatkan sesi tryout
         if ($user_tryout->tryout_session_id) {
             $session = $this->TryoutSessionModel->getDetail(['id' => $user_tryout->tryout_session_id]);
         } else {
-            // Jika tidak ada tryout_session_id, maka kita perlu mengambil sesi pertama dari tryout
             $this->load->model('TryoutModel');
             $tryout = $this->TryoutModel->getDetail(['id' => $user_tryout->tryout_id]);
+            
+            if (!$tryout) {
+                $this->session->set_flashdata('error', 'Tryout tidak ditemukan');
+                redirect('tryout_list');
+                return;
+            }
+            
             $session = $this->TryoutSessionModel->getFirstSession($tryout->id);
         }
 
-        if (!$user_tryout || !$session) {
-            show_404();
+        if (!$session) {
+            $this->session->set_flashdata('error', 'Sesi tryout tidak ditemukan');
+            redirect('tryout_list');
             return;
         }
 
         // Ambil soal-soal untuk sesi ini
         $questions = $this->TryoutQuestionModel->getQuestionsBySession($session->id, $session->is_random);
-        $total_questions = count($questions);
-
-        // Debug: cek apakah ada soal
+        
         if (empty($questions)) {
             $this->session->set_flashdata('error', 'Tidak ada soal dalam sesi ini.');
             redirect('tryout_list');
             return;
         }
+        
+        $total_questions = count($questions);
 
-        // Ambil jawaban yang sudah diberikan oleh pengguna
+        // Ambil jawaban pengguna
         $answer_map = [];
         
-        // Gunakan fungsi getAnswers yang sesuai dari model
+        // Jawaban pilihan ganda
         $answers = $this->UserAnswerModel->getAnswers($user_tryout->id);
         foreach ($answers as $answer) {
             $answer_obj = (object)$answer;
             $answer_map[$answer_obj->question_id] = $answer_obj;
         }
         
-        // Ambil jawaban esai yang sudah diberikan oleh pengguna
+        // Jawaban esai
         $essay_answers = $this->EssayAnswerModel->getAll(['user_tryout_id' => $user_tryout->id]);
         foreach ($essay_answers as $answer) {
             $answer_map[$answer->question_id] = $answer;
         }
+        
+        // Ambil bookmark pengguna
+        $bookmarks = $this->BookmarkModel->getByUserAndTryout(
+            $this->session->userdata('user')['id'],
+            $user_tryout->id
+        );
+        
+        // Buat map untuk bookmark
+        $bookmark_map = [];
+        foreach ($bookmarks as $bookmark) {
+            $bookmark_map[$bookmark->question_id] = true;
+        }
 
+        // Siapkan data untuk view
         $data = [
             'app' => $this->app(),
-            'main_js' => $this->load_main_js('user_tryout/views/main.js.php'),
+            'main_js' => $this->load_main_js('user_tryout', [
+                'user_tryout_id' => $user_tryout->id,
+                'session_id' => $session->id,
+                'total_questions' => $total_questions
+            ]),
             'title' => $session->name,
             'user_tryout' => $user_tryout,
             'session' => $session,
             'questions' => $questions,
             'total_questions' => $total_questions,
             'answer_map' => $answer_map,
+            'bookmark_map' => $bookmark_map,
         ];
 
+        // Set title dan tampilkan view
         // $this->template->set('title', $data['title'] . ' | ' . $data['app']->app_name, TRUE);
-        // $this->template->load_view('play', $data, TRUE);
+        // $this->template->load_view('user_tryout/play', $data, TRUE);
         // $this->template->render();
 		$this->load->view('play', $data);
+    }
+
+    public function toggle_bookmark()
+    {
+        $this->handle_ajax_request();
+
+        $user_tryout_id = $this->input->post('user_tryout_id');
+        $question_id = $this->input->post('question_id');
+        $user_id = $this->session->userdata('user')['id'];
+
+        // Validasi input
+        if (!$user_tryout_id || !$question_id) {
+            echo json_encode(['status' => false, 'message' => 'Parameter tidak lengkap']);
+            return;
+        }
+
+        $this->load->model('BookmarkModel');
+        
+        // Toggle bookmark
+        $result = $this->BookmarkModel->toggleBookmark($user_id, $question_id, $user_tryout_id);
+        echo json_encode($result);
     }
 
     public function submit_session($user_tryout_id, $session_id)
@@ -149,14 +203,22 @@ class User_tryout extends AppBackend
         // Dapatkan sesi berikutnya (jika ada)
         $next_session = $this->TryoutSessionModel->getNextSession($session->tryout_id, $session->id);
 
+        // Muat file main.js.php yang benar
+        $main_js = $this->load_main_js('user_tryout_result', [
+            'user_tryout_id' => $user_tryout->id,
+            'session_id' => $session->id
+        ]);
+
         $data = [
             'app' => $this->app(),
+            'main_js' => $main_js,
             'title' => 'Hasil Try Out',
             'user_tryout' => $user_tryout,
             'session' => $session,
             'next_session' => $next_session
         ];
 
+		// $this->load->view('result', $data);
         $this->template->set('title', $data['title'] . ' | ' . $data['app']->app_name, TRUE);
         $this->template->load_view('result', $data, TRUE);
         $this->template->render();
@@ -393,5 +455,26 @@ class User_tryout extends AppBackend
         // Generate PDF menggunakan fungsi dari AppBackend
         $filename = 'hasil_tryout_' . $session->name . '_' . date('Y-m-d') . '.pdf';
         $this->generatePDF($html, $filename);
+    }
+    
+    public function resume($id)
+    {
+        // Ambil user_tryout berdasarkan ID
+        $user_tryout = $this->UserTryoutModel->getDetail(['id' => $id]);
+        
+        // Pastikan user_tryout ditemukan dan milik pengguna saat ini
+        if (!$user_tryout || $user_tryout->user_id != $this->session->userdata('user')['id']) {
+            show_404();
+            return;
+        }
+        
+        // Jika status sudah completed, arahkan ke hasil
+        if ($user_tryout->status === 'completed') {
+            redirect('user_tryout/result/' . $id);
+            return;
+        }
+        
+        // Jika status masih in_progress, arahkan ke halaman play
+        redirect('user_tryout/play/' . $id);
     }
 }

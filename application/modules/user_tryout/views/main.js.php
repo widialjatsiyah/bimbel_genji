@@ -1,240 +1,372 @@
-<script type="text/javascript">
-    $(document).ready(function() {
+$(document).ready(function() {
+    // Data soal dari server (dikirim dalam bentuk JSON)
+    var currentIndex = 0;
+    var timerInterval;
 
-        var _key = "";
-        var _section = "tryout";
-        var _table = "table-tryout";
-        var _modal = "modal-form-tryout";
-        var _form = "form-tryout";
+    // Define BASE_URL for use in JavaScript
+    var BASE_URL = '<?= base_url() ?>';
 
-        // Initialize DataTables
-        if ($("#" + _table)[0]) {
-            var table_tryout = $("#" + _table).DataTable({
-                processing: true,
-                serverSide: true,
-                ajax: {
-                    url: "<?php echo base_url('tryout/ajax_get_all/') ?>",
-                    type: "get"
-                },
-                columns: [{
-                        data: null,
-                        render: function(data, type, row, meta) {
-                            return meta.row + meta.settings._iDisplayStart + 1;
-                        }
-                    },
-                    {
-                        data: "title",
-                    },
-                    {
-                        data: "description",
-                        render: function(data) {
-                            return data ? data : '-';
-                        }
-                    },
-                    {
-                        data: "type",
-                    },
-                    {
-                        data: "mode",
-                    },
-                    {
-                        data: "total_duration",
-                        render: function(data) {
-                            return data ? data : '-';
-                        }
-                    },
-                    {
-                        data: "start_time",
-                        render: function(data) {
-                            return data ? data : '-';
-                        }
-                    },
-                    {
-                        data: "end_time",
-                        render: function(data) {
-                            return data ? data : '-';
-                        }
-                    },
-                    {
-                        data: "is_published",
-                        render: function(data) {
-                            return data == '1' ? '<span class="badge bg-success">Ya</span>' : '<span class="badge bg-secondary">Tidak</span>';
-                        }
-                    },
-                    {
-                        data: null,
-                        className: "center",
-                        defaultContent: '<div class="action">' +
-                            '<a href="javascript:;" class="btn btn-sm btn-light btn-table-action action-edit" data-toggle="modal" data-target="#' + _modal + '"><i class="zmdi zmdi-edit"></i> Ubah</a>&nbsp;' +
-                            '<a href="javascript:;" class="btn btn-sm btn-danger btn-table-action action-delete"><i class="zmdi zmdi-delete"></i> Hapus</a>' +
-                            '</div>'
-                    }
-                ],
-                autoWidth: !1,
-                responsive: {
-                    details: {
-                        renderer: function(api, rowIdx, columns) {
-                            var hideColumn = [];
-                            var data = $.map(columns, function(col, i) {
-                                return ($.inArray(col.columnIndex, hideColumn)) ?
-                                    '<tr data-dt-row="' + col.rowIndex + '" data-dt-column="' + col.columnIndex + '">' +
-                                    '<td class="dt-details-td">' + col.title + ':' + '</td> ' +
-                                    '<td class="dt-details-td">' + col.data + '</td>' +
-                                    '</tr>' :
-                                    '';
-                            }).join('');
+    // Debug: Tampilkan jumlah soal di console
+    console.log("Jumlah soal:", totalQuestions);
+    console.log("Data soal:", questions);
 
-                            return data ? $('<table/>').append(data) : false;
-                        },
-                        type: "inline",
-                        target: 'tr',
-                    }
-                },
-                columnDefs: [{
-                    className: 'desktop',
-                    targets: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-                }, {
-                    className: 'tablet',
-                    targets: [0, 1, 2, 3, 4, 5]
-                }, {
-                    className: 'mobile',
-                    targets: [0, 1]
-                }, {
-                    responsivePriority: 2,
-                    targets: -1
-                }],
-                pageLength: 15,
-                language: {
-                    searchPlaceholder: "Cari...",
-                    sProcessing: '<div style="text-align: center;"><div class="lds-ellipsis"><div></div><div></div><div></div><div></div></div></div>'
-                },
-                sDom: '<"dataTables_ct"><"dataTables__top"fb>rt<"dataTables__bottom"ip><"clear">',
-                buttons: [{
-                    extend: "excelHtml5",
-                    title: "Export Try Out"
-                }, {
-                    extend: "print",
-                    title: "Export Try Out"
-                }],
-                initComplete: function(a, b) {
-                    $(this).closest(".dataTables_wrapper").find(".dataTables__top").prepend(
-                        '<div class="dataTables_buttons hidden-sm-down actions">' +
-                        '<span class="actions__item zmdi zmdi-refresh" data-table-action="reload" title="Reload" />' +
-                        '</div>'
-                    );
-                },
-            });
-
-            $(".dataTables_filter input[type=search]").focus(function() {
-                $(this).closest(".dataTables_filter").addClass("dataTables_filter--toggled")
-            });
-
-            $(".dataTables_filter input[type=search]").blur(function() {
-                $(this).closest(".dataTables_filter").removeClass("dataTables_filter--toggled")
-            });
-
-            $("body").on("click", "[data-table-action]", function(a) {
-                a.preventDefault();
-                var b = $(this).data("table-action");
-                if ("reload" === b) {
-                    $("#" + _table).DataTable().ajax.reload(null, false);
-                };
-            });
-        };
-
-        // Handle add
-        $("#" + _section).on("click", "button." + _section + "-action-add", function(e) {
-            e.preventDefault();
-            resetForm();
-        });
-
-        // Handle edit
-        $("#" + _table).on("click", "a.action-edit", function(e) {
-            e.preventDefault();
-            resetForm();
-            var temp = table_tryout.row($(this).closest('tr')).data();
-
-            _key = temp.id;
-
-            $(`#${_form} .tryout-title`).val(temp.title);
-            $(`#${_form} .tryout-description`).val(temp.description);
-            $(`#${_form} .tryout-type`).val(temp.type);
-            $(`#${_form} .tryout-mode`).val(temp.mode);
-            $(`#${_form} .tryout-total_duration`).val(temp.total_duration);
-            $(`#${_form} .tryout-start_time`).val(temp.start_time);
-            $(`#${_form} .tryout-end_time`).val(temp.end_time);
-            $(`#${_form} .tryout-is_published`).prop('checked', temp.is_published == '1');
-        });
-
-        // Handle save
-        $("#" + _modal + " ." + _section + "-action-save").on("click", function(e) {
-            e.preventDefault();
-            $.ajax({
-                type: "post",
-                url: "<?php echo base_url('tryout/ajax_save/') ?>" + _key,
-                data: $("#" + _form).serialize(),
-                success: function(response) {
-                    var response = JSON.parse(response);
-                    if (response.status === true) {
-                        resetForm();
-                        $("#" + _modal).modal("hide");
-                        $("#" + _table).DataTable().ajax.reload(null, false);
-                        notify(response.data, "success");
-                    } else {
-                        notify(response.data, "danger");
-                    };
+    // Inisialisasi tampilan
+    function renderQuestion(index) {
+        if (!questions[index]) {
+            console.error("Soal pada index " + index + " tidak ditemukan");
+            return;
+        }
+        
+        var q = questions[index];
+        var questionData = q; // Data soal sudah digabungkan di model
+        
+        // Cek apakah soal ini bagian dari grup
+        var questionHtml = '';
+        
+        // Jika soal ini adalah soal pertama dalam grup (urutan 1), tampilkan header grup
+        if (questionData.is_group_main) {
+            questionHtml += '<div class="question-group-header">';
+            questionHtml += '<strong>Soal Cerita</strong>';
+            questionHtml += '</div>';
+        }
+        
+        questionHtml += questionData.question_text;
+        
+        // Tambahkan gambar soal jika ada
+        if (questionData.question_image) {
+            questionHtml += '<div class="mb-3"><img src="' + BASE_URL + questionData.question_image + '" class="img-fluid" alt="Gambar Soal" /></div>';
+        }
+        
+        $('#question-text').html(questionHtml);
+        
+        var optionsHtml = '';
+        // Check if the question type is multiple choice to show options
+        if (questionData.question_type === 'multiple_choice') {
+            optionsHtml += '<ul class="options-list">';
+            var letters = ['A', 'B', 'C', 'D', 'E'];
+            for (var i = 0; i < 5; i++) {
+                var letter = letters[i];
+                var optContent = questionData['option_' + letter.toLowerCase()];
+                
+                // Jika tidak ada konten untuk opsi ini, lewati
+                if (!optContent) continue;
+                
+                var checked = (answerMap[q.question_id] && answerMap[q.question_id].answer === letter) ? 'checked' : '';
+                var isSelected = (answerMap[q.question_id] && answerMap[q.question_id].answer === letter) ? 'selected' : '';
+                
+                // Gunakan field option_type untuk menentukan tipe konten
+                var optType = questionData.option_type || 'text';
+                
+                var optionContent = '';
+                if (optType === 'image') {
+                    optionContent = '<img src="' + BASE_URL + optContent + '" class="img-fluid" style="max-width: 200px; margin-top: 10px;" alt="Gambar Opsi" />';
+                } else {
+                    optionContent = optContent;
                 }
-            });
+                
+                optionsHtml += `
+                    <li class="option-item ${isSelected}" data-option="${letter}" data-question-id="${q.question_id}">
+                        <input type="radio" name="option" value="${letter}" ${checked}>
+                        <span class="option-letter">${letter}</span> ${optionContent}
+                    </li>
+                `;
+            }
+            optionsHtml += '</ul>';
+        } else if (questionData.question_type === 'essay') {
+            // For essay questions, show a text area for answers
+            var userEssayAnswer = '';
+            if(answerMap[q.question_id] && answerMap[q.question_id].answer_text) {
+                userEssayAnswer = answerMap[q.question_id].answer_text;
+            }
+            
+            optionsHtml += `
+                <div class="essay-answer-area">
+                    <label for="essay-answer-${q.question_id}">Jawaban Esai:</label>
+                    <textarea 
+                        id="essay-answer-${q.question_id}" 
+                        class="form-control essay-answer-textarea" 
+                        rows="6" 
+                        placeholder="Tulis jawaban esai Anda di sini...">${userEssayAnswer}</textarea>
+                    <button class="btn btn-primary save-essay-btn mt-2" data-question-id="${q.question_id}">Simpan Jawaban</button>
+                </div>
+            `;
+        }
+        
+        $('#options-container').html(optionsHtml);
+
+        // Set status ragu
+        if (answerMap[q.question_id] && answerMap[q.question_id].is_unsure == 1) {
+            $('#btn-unsure').addClass('active');
+        } else {
+            $('#btn-unsure').removeClass('active');
+        }
+
+        // Set status bookmark
+        if (bookmarkMap && bookmarkMap[q.question_id]) {
+            $('#btn-bookmark').addClass('active');
+            $('.question-number').addClass('bookmarked');
+        } else {
+            $('#btn-bookmark').removeClass('active');
+            $('.question-number').removeClass('bookmarked');
+        }
+
+        // Update nomor soal
+        $('#current-number').text(index + 1);
+
+        // Update navigasi grid
+        updateGrid();
+    }
+
+    function updateGrid() {
+        var gridHtml = '';
+        for (var i = 0; i < totalQuestions; i++) {
+            var qid = questions[i].question_id;
+            var statusClass = '';
+            if (answerMap[qid]) {
+                if (answerMap[qid].is_unsure == 1) {
+                    statusClass = 'unsure';
+                } else if (answerMap[qid].answer || answerMap[qid].answer_text) {
+                    statusClass = 'answered';
+                } else {
+                    statusClass = 'skipped';
+                }
+            } else {
+                statusClass = 'skipped';
+            }
+            
+            // Tambahkan kelas jika soal di-bookmark
+            var isBookmarked = bookmarkMap && bookmarkMap[qid] ? 'bookmarked' : '';
+            var currentClass = (i === currentIndex) ? 'current' : '';
+            gridHtml += `<div class="question-grid-item ${statusClass} ${isBookmarked} ${currentClass}" data-index="${i}">${i+1}</div>`;
+        }
+        $('#question-grid').html(gridHtml);
+    }
+    
+    // Add event handler for essay answers
+    $(document).on('click', '.save-essay-btn', function() {
+        var questionId = $(this).data('question-id');
+        var answerText = $('#essay-answer-' + questionId).val();
+        
+        $.ajax({
+            url: BASE_URL + 'user_tryout/ajax_save_essay_answer',
+            method: 'POST',
+            data: {
+                user_tryout_id: userTryoutId,
+                question_id: questionId,
+                answer_text: answerText,
+                is_unsure: $('#btn-unsure').hasClass('active') ? 1 : 0
+            },
+            success: function(res) {
+                var res = JSON.parse(res);
+                if (res.status) {
+                    // Update answerMap
+                    if (!answerMap[questionId]) answerMap[questionId] = {};
+                    answerMap[questionId].answer_text = answerText;
+                    answerMap[questionId].is_unsure = $('#btn-unsure').hasClass('active') ? 1 : 0;
+                    updateGrid();
+                    showNotification('Jawaban esai disimpan!', 'success');
+                } else {
+                    showNotification('Gagal menyimpan jawaban esai!', 'removed');
+                }
+            },
+            error: function() {
+                showNotification('Gagal menyimpan jawaban esai!', 'removed');
+            }
         });
+    });
 
-        // Handle delete
-        $("#" + _table).on("click", "a.action-delete", function(e) {
-            e.preventDefault();
-            var temp = table_tryout.row($(this).closest('tr')).data();
+    // Event klik option - gunakan event delegation karena elemen dibuat secara dinamis
+    $(document).on('click', '.option-item', function() {
+        var option = $(this).data('option');
+        var qid = $(this).data('question-id');
+        
+        // Hapus kelas selected dari semua option
+        $('.option-item').removeClass('selected');
+        $(this).addClass('selected');
+        
+        // Set radio
+        $(this).find('input[type="radio"]').prop('checked', true);
 
-            swal({
-                title: "Anda akan menghapus data, lanjutkan?",
-                text: "Setelah dihapus, data tidak dapat dikembalikan lagi!",
-                type: "warning",
-                showCancelButton: true,
-                confirmButtonColor: '#DD6B55',
-                confirmButtonText: "Ya",
-                cancelButtonText: "Tidak",
-                closeOnConfirm: false
-            }).then((result) => {
-                if (result.value) {
-                    $.ajax({
-                        type: "delete",
-                        url: "<?php echo base_url('tryout/ajax_delete/') ?>" + temp.id,
-                        dataType: "json",
-                        success: function(response) {
-                            if (response.status) {
-                                $("#" + _table).DataTable().ajax.reload(null, false);
-                                notify(response.data, "success");
-                            } else {
-                                notify(response.data, "danger");
-                            };
-                        }
-                    });
-                };
-            });
+        // Simpan jawaban via AJAX
+        $.ajax({
+            url: BASE_URL + 'user_tryout/ajax_save_answer',
+            method: 'POST',
+            data: {
+                user_tryout_id: userTryoutId,
+                question_id: qid,
+                answer: option,
+                is_unsure: $('#btn-unsure').hasClass('active') ? 1 : 0
+            },
+            success: function(res) {
+                if (res.status) {
+                    // Update answerMap
+                    if (!answerMap[qid]) answerMap[qid] = {};
+                    answerMap[qid].answer = option;
+                    answerMap[qid].is_unsure = $('#btn-unsure').hasClass('active') ? 1 : 0;
+                    updateGrid();
+                }
+            }
         });
+    });
 
-        resetForm = () => {
-            _key = "";
-            $(`#${_form}`).trigger("reset");
-            $(`#${_form} .tryout-type`).val('UTBK');
-            $(`#${_form} .tryout-mode`).val('resmi');
-            $(`#${_form} .tryout-is_published`).prop('checked', true);
-        };
+    // Tombol ragu-ragu
+    $('#btn-unsure').click(function() {
+        $(this).toggleClass('active');
+        var qid = questions[currentIndex].question_id;
+        var isUnsure = $(this).hasClass('active') ? 1 : 0;
 
-        // Initialize flatpickr for datetime
-        if (typeof flatpickr !== 'undefined') {
-            flatpickr(".flatpickr-datetime", {
-                enableTime: true,
-                dateFormat: "Y-m-d H:i:S",
-                time_24hr: true
-            });
+        $.ajax({
+            url: BASE_URL + 'user_tryout/ajax_mark_unsure',
+            method: 'POST',
+            data: {
+                user_tryout_id: userTryoutId,
+                question_id: qid,
+                is_unsure: isUnsure
+            },
+            success: function(res) {
+                if (res.status) {
+                    if (!answerMap[qid]) answerMap[qid] = {};
+                    answerMap[qid].is_unsure = isUnsure;
+                    updateGrid();
+                }
+            }
+        });
+    });
+
+    // Tombol bookmark
+    $('#btn-bookmark').click(function() {
+        var qid = questions[currentIndex].question_id;
+        
+        $.ajax({
+            url: BASE_URL + 'user_tryout/toggle_bookmark',
+            method: 'POST',
+            data: {
+                user_tryout_id: userTryoutId,
+                question_id: qid
+            },
+            success: function(res) {
+                if (res.status) {
+                    // Toggle bookmark status
+                    if (!bookmarkMap) bookmarkMap = {};
+                    
+                    if (res.action === 'added') {
+                        bookmarkMap[qid] = true;
+                        $(this).addClass('active');
+                        $('.question-number').addClass('bookmarked');
+                        
+                        // Tampilkan notifikasi
+                        showNotification('Bookmark ditambahkan!', 'success');
+                    } else {
+                        delete bookmarkMap[qid];
+                        $(this).removeClass('active');
+                        $('.question-number').removeClass('bookmarked');
+                        
+                        // Tampilkan notifikasi
+                        showNotification('Bookmark dihapus!', 'removed');
+                    }
+                    
+                    // Update tampilan tombol
+                    if (res.action === 'added') {
+                        $('#btn-bookmark').addClass('active');
+                    } else {
+                        $('#btn-bookmark').removeClass('active');
+                    }
+                    
+                    updateGrid();
+                }
+            }.bind(this),
+            error: function(xhr, status, error) {
+                console.error("Error toggling bookmark:", error);
+                showNotification('Gagal mengubah bookmark!', 'removed');
+            }
+        });
+    });
+    
+    // Fungsi untuk menampilkan notifikasi
+    function showNotification(message, type) {
+        const notification = $(`
+            <div class="notification ${type} show">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'times-circle'}"></i> 
+                ${message}
+            </div>
+        `);
+        
+        $('#notification-container').append(notification);
+        
+        // Hapus notifikasi setelah 3 detik
+        setTimeout(() => {
+            notification.removeClass('show');
+            setTimeout(() => {
+                notification.remove();
+            }, 300);
+        }, 3000);
+    }
+
+    // Navigasi next
+    $('#btn-next').click(function() {
+        if (currentIndex < totalQuestions - 1) {
+            currentIndex++;
+            renderQuestion(currentIndex);
+            $('#btn-prev').prop('disabled', false);
+        }
+        if (currentIndex === totalQuestions - 1) {
+            $('#btn-next').text('Selesai');
+        } else {
+            $('#btn-next').text('Selanjutnya');
         }
     });
-</script>
+
+    // Navigasi prev
+    $('#btn-prev').click(function() {
+        if (currentIndex > 0) {
+            currentIndex--;
+            renderQuestion(currentIndex);
+            $('#btn-next').text('Selanjutnya');
+        }
+        if (currentIndex === 0) {
+            $('#btn-prev').prop('disabled', true);
+        }
+    });
+
+    // Klik grid navigasi
+    $(document).on('click', '.question-grid-item', function() {
+        var index = $(this).data('index');
+        if (index !== undefined) {
+            currentIndex = index;
+            renderQuestion(currentIndex);
+            $('#btn-prev').prop('disabled', currentIndex === 0);
+            $('#btn-next').text(currentIndex === totalQuestions - 1 ? 'Selesai' : 'Selanjutnya');
+        }
+    });
+
+    // Submit sesi
+    $('#btn-submit-session').click(function() {
+        if (confirm('Apakah Anda yakin ingin menyelesaikan sesi ini?')) {
+            window.location.href = BASE_URL + 'user_tryout/submit_session/' + userTryoutId + '/' + sessionId;
+        }
+    });
+
+    // Timer
+    function startTimer() {
+        timerInterval = setInterval(function() {
+            timeLeft--;
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                alert('Waktu habis!');
+                window.location.href = BASE_URL + 'user_tryout/submit_session/' + userTryoutId + '/' + sessionId;
+            }
+            var hours = Math.floor(timeLeft / 3600);
+            var minutes = Math.floor((timeLeft % 3600) / 60);
+            var seconds = timeLeft % 60;
+            $('#timer').text(
+                (hours < 10 ? '0' + hours : hours) + ':' +
+                (minutes < 10 ? '0' + minutes : minutes) + ':' +
+                (seconds < 10 ? '0' + seconds : seconds)
+            );
+        }, 1000);
+    }
+    startTimer();
+
+    // Render soal pertama
+    renderQuestion(0);
+});

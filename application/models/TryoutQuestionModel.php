@@ -27,6 +27,11 @@ class TryoutQuestionModel extends CI_Model
 				'field' => 'points',
 				'label' => 'Poin Soal',
 				'rules' => 'required|numeric|greater_than[0]'
+			],
+			[
+				'field' => 'time_limit',
+				'label' => 'Batas Waktu Soal (detik)',
+				'rules' => 'integer|greater_than_equal_to[0]'
 			]
 		);
 	}
@@ -54,6 +59,7 @@ class TryoutQuestionModel extends CI_Model
 			$this->question_id = $this->input->post('question_id');
 			$this->question_order = $this->input->post('question_order');
 			$this->points = $this->input->post('points') ?: 1.00;
+			$this->time_limit = $this->input->post('time_limit') ?: 0;
 			$this->db->insert($this->_table, $this);
 			$response = array('status' => true, 'data' => 'Soal berhasil ditambahkan ke sesi.');
 		} catch (\Throwable $th) {
@@ -70,6 +76,7 @@ class TryoutQuestionModel extends CI_Model
 			$this->question_id = $this->input->post('question_id');
 			$this->question_order = $this->input->post('question_order');
 			$this->points = $this->input->post('points') ?: 1.00;
+			$this->time_limit = $this->input->post('time_limit') ?: 0;
 			$this->db->update($this->_table, $this, array('id' => $id));
 			$response = array('status' => true, 'data' => 'Data soal sesi berhasil diperbarui.');
 		} catch (\Throwable $th) {
@@ -92,14 +99,13 @@ class TryoutQuestionModel extends CI_Model
 
 	public function getQuestionsBySession($session_id, $random = false)
 	{
-		$this->db->select('tq.*, q.question_text, q.question_type, q.question_image, q.expected_keywords, q.min_keyword_matches, q.option_a, q.option_a_image, q.option_b, q.option_b_image, q.option_c, q.option_c_image, q.option_d, q.option_d_image, q.option_e, q.option_e_image, q.correct_option, q.explanation, q.group_id, q.group_order, q.is_group_main')
+		$this->db->select('tq.*, q.question_text, q.question_type, q.question_image, q.expected_keywords, q.min_keyword_matches, q.option_type, q.option_a, q.option_b, q.option_c, q.option_d, q.option_e, q.correct_option, q.explanation, q.group_id, q.group_order, q.is_group_main')
 			->from('tryout_questions tq')
 			->join('questions q', 'q.id = tq.question_id')
 			->where('tq.tryout_session_id', $session_id);
 			
 		if ($random) {
 			// Untuk soal acak, kita perlu mengelompokkan soal berdasarkan group_id
-			// dan memastikan soal dalam grup yang sama tetap berurutan
 			$questions = $this->db->get()->result();
 			
 			// Kelompokkan soal berdasarkan group_id
@@ -176,6 +182,20 @@ class TryoutQuestionModel extends CI_Model
 	{
 		$data = array(
 			'points' => $points
+		);
+		
+		$this->db->where('tryout_session_id', $session_id);
+		$this->db->where('question_id', $question_id);
+		return $this->db->update($this->_table, $data);
+	}
+	
+	/**
+	 * Update time limit for a specific question in a session
+	 */
+	public function updateTimeLimit($session_id, $question_id, $time_limit)
+	{
+		$data = array(
+			'time_limit' => $time_limit
 		);
 		
 		$this->db->where('tryout_session_id', $session_id);

@@ -26,6 +26,7 @@
                             <th>Jumlah Soal</th>
                             <th>Acak Soal</th>
                             <th>Metode Skor</th>
+                            <th>Waktu PerSoal</th>
                             <th>Deskripsi</th>
                             <th width="220" class="text-center">#</th>
                         </tr>

@@ -42,6 +42,16 @@ class TryoutSessionModel extends CI_Model
 				'field' => 'scoring_method',
 				'label' => 'Metode Perhitungan Skor',
 				'rules' => 'required|in_list[correct_incorrect,points_per_question]'
+			],
+			[
+				'field' => 'enable_time_per_question',
+				'label' => 'Aktifkan Waktu Per Soal',
+				'rules' => 'required|in_list[0,1]'
+			],
+			[
+				'field' => 'time_per_question',
+				'label' => 'Waktu Per Soal (detik)',
+				'rules' => 'integer|greater_than_equal_to[0]'
 			]
 		);
 	}
@@ -73,6 +83,8 @@ class TryoutSessionModel extends CI_Model
 			$this->description = $this->input->post('description');
 			$this->is_random = $this->input->post('is_random', TRUE) ?: 0;
 			$this->scoring_method = $this->input->post('scoring_method', TRUE) ?: 'correct_incorrect';
+			$this->enable_time_per_question = $this->input->post('enable_time_per_question', TRUE) ?: 0;
+			$this->time_per_question = $this->input->post('time_per_question', TRUE) ?: 0;
 			$this->db->insert($this->_table, $this);
 			$response = array('status' => true, 'data' => 'Data sesi try out berhasil disimpan.');
 		} catch (\Throwable $th) {
@@ -93,6 +105,8 @@ class TryoutSessionModel extends CI_Model
 			$this->description = $this->input->post('description');
 			$this->is_random = $this->input->post('is_random', TRUE) ?: 0;
 			$this->scoring_method = $this->input->post('scoring_method', TRUE) ?: 'correct_incorrect';
+			$this->enable_time_per_question = $this->input->post('enable_time_per_question', TRUE) ?: 0;
+			$this->time_per_question = $this->input->post('time_per_question', TRUE) ?: 0;
 			$this->db->update($this->_table, $this, array('id' => $id));
 			$response = array('status' => true, 'data' => 'Data sesi try out berhasil diperbarui.');
 		} catch (\Throwable $th) {

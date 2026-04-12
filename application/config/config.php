@@ -463,6 +463,7 @@ $config['csrf_regenerate'] = FALSE;
 $config['csrf_exclude_uris'] = array(
     'user_tryout/ajax_mark_unsure',
     'user_tryout/ajax_save_answer',
+    'user_tryout/toggle_bookmark',
     'tryout_session/ajax_get_questions_by_session',
     'tryout_session/ajax_get_questions_not_in_session',
     'tryout_session/ajax_add_questions_to_session',

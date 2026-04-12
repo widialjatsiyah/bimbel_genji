@@ -7,6 +7,11 @@
     <meta name="description" content="<?= isset($settings['meta_description']) ? $settings['meta_description'] : '' ?>">
     <meta name="keywords" content="<?= isset($settings['meta_keywords']) ? $settings['meta_keywords'] : '' ?>">
     
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" sizes="96x96" href="<?php echo base_url('themes/_public/') ?>img/favicon/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="<?php echo base_url('themes/_public/') ?>img/favicon/web-app-manifest-192x192.png">
+    <link rel="manifest" href="<?php echo base_url('themes/_public/') ?>img/favicon/site.webmanifest">
+    <meta name="msapplication-TileColor" content="#ffffff">
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome 6 -->
