@@ -507,20 +507,20 @@ class QuestionModel extends CI_Model
 				}
 
 				// Hapus gambar pilihan
-				if ($question->option_a_image && file_exists(FCPATH . $question->option_a_image)) {
-					unlink(FCPATH . $question->option_a_image);
+				if ($question->option_a && file_exists(FCPATH . $question->option_a)) {
+					unlink(FCPATH . $question->option_a);
 				}
-				if ($question->option_b_image && file_exists(FCPATH . $question->option_b_image)) {
-					unlink(FCPATH . $question->option_b_image);
+				if ($question->option_b && file_exists(FCPATH . $question->option_b)) {
+					unlink(FCPATH . $question->option_b);
 				}
-				if ($question->option_c_image && file_exists(FCPATH . $question->option_c_image)) {
-					unlink(FCPATH . $question->option_c_image);
+				if ($question->option_c && file_exists(FCPATH . $question->option_c)) {
+					unlink(FCPATH . $question->option_c);
 				}
-				if ($question->option_d_image && file_exists(FCPATH . $question->option_d_image)) {
-					unlink(FCPATH . $question->option_d_image);
+				if ($question->option_d && file_exists(FCPATH . $question->option_d)) {
+					unlink(FCPATH . $question->option_d);
 				}
-				if ($question->option_e_image && file_exists(FCPATH . $question->option_e_image)) {
-					unlink(FCPATH . $question->option_e_image);
+				if ($question->option_e && file_exists(FCPATH . $question->option_e)) {
+					unlink(FCPATH . $question->option_e);
 				}
 			}
 
