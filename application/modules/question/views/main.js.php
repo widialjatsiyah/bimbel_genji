@@ -269,10 +269,12 @@
                     {
                         data: null,
                         className: "center",
-                        defaultContent: '<div class="action">' +
-                            '<a href="javascript:;" class="btn btn-sm btn-light btn-table-action action-edit" data-toggle="modal" data-target="#' + _modal + '"><i class="zmdi zmdi-edit"></i> Ubah</a>&nbsp;' +
-                            '<a href="javascript:;" class="btn btn-sm btn-danger btn-table-action action-delete"><i class="zmdi zmdi-delete"></i> Hapus</a>' +
-                            '</div>'
+                        render: function(data, type, row) {
+                            return '<div class="action">' +
+                                '<a href="<?php echo base_url("question/form/") ?>' + row.id + '" class="btn btn-sm btn-light btn-table-action" target="_blank"><i class="zmdi zmdi-edit"></i> Ubah</a>&nbsp;' +
+                                '<a href="javascript:;" class="btn btn-sm btn-danger btn-table-action action-delete"><i class="zmdi zmdi-delete"></i> Hapus</a>' +
+                                '</div>';
+                        }
                     }
                 ],
                 autoWidth: !1,
@@ -300,10 +302,10 @@
                     targets: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
                 }, {
                     className: 'tablet',
-                    targets: [0, 1, 2, 3, 4, 5]
+                    targets: [0, 1, 2, 3, 4, 5, 6, 7]
                 }, {
                     className: 'mobile',
-                    targets: [0, 1]
+                    targets: [0, 1, 6]
                 }, {
                     responsivePriority: 2,
                     targets: -1
@@ -316,10 +318,16 @@
                 sDom: '<"dataTables_ct"><"dataTables__top"fb>rt<"dataTables__bottom"ip><"clear">',
                 buttons: [{
                     extend: "excelHtml5",
-                    title: "Export Soal"
+                    title: "Export Soal",
+                    exportOptions: {
+                        columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+                    }
                 }, {
                     extend: "print",
-                    title: "Export Soal"
+                    title: "Export Soal",
+                    exportOptions: {
+                        columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+                    }
                 }],
                 initComplete: function(a, b) {
                     $(this).closest(".dataTables_wrapper").find(".dataTables__top").prepend(
@@ -403,78 +411,10 @@
             resetForm();
         });
 
-        // Handle edit
-        $("#" + _table).on("click", "a.action-edit", function(e) {
-            e.preventDefault();
-            resetForm();
-            var temp = table_question.row($(this).closest('tr')).data();
+        // Handle edit - now we'll remove this since we're changing to direct link
+        // The edit functionality is now handled by clicking the direct link
 
-            _key = temp.id;
-
-            // Set nilai form
-            $(`#${_form} .question-subject_id`).val(temp.subject_id).trigger('change');
-
-            // Karena subject berubah, kita perlu menunggu chapter terload dulu sebelum set nilainya
-            // Gunakan setTimeout atau trigger manual setelah ajax selesai
-            setTimeout(function() {
-                $(`#${_form} .question-chapter_id`).val(temp.chapter_id).trigger('change');
-            }, 500);
-
-            setTimeout(function() {
-                $(`#${_form} .question-topic_id`).val(temp.topic_id).trigger('change');
-            }, 800);
-
-            $(`#${_form} .question-difficulty`).val(temp.difficulty);
-            $(`#${_form} .question-curriculum`).val(temp.curriculum);
-            $(`#${_form} .question-question_text`).val(temp.question_text);
-            
-            // Set gambar soal jika ada
-            if(temp.question_image) {
-                $(`#${_form} .question-image-hidden`).val(temp.question_image);
-                $('#question_image_preview').html('<img src="<?php echo base_url() ?>' + temp.question_image + '" style="max-width: 200px; max-height: 200px;" />');
-            }
-            
-            $(`#${_form} .question-option_a`).val(temp.option_a);
-            // Set gambar pilihan A jika ada
-            if(temp.option_a_image) {
-                $(`#${_form} .option_a_image-hidden`).val(temp.option_a_image);
-                $('#option_a_image_preview').html('<img src="<?php echo base_url() ?>' + temp.option_a_image + '" style="max-width: 200px; max-height: 200px;" />');
-            }
-            
-            $(`#${_form} .question-option_b`).val(temp.option_b);
-            // Set gambar pilihan B jika ada
-            if(temp.option_b_image) {
-                $(`#${_form} .option_b_image-hidden`).val(temp.option_b_image);
-                $('#option_b_image_preview').html('<img src="<?php echo base_url() ?>' + temp.option_b_image + '" style="max-width: 200px; max-height: 200px;" />');
-            }
-            
-            $(`#${_form} .question-option_c`).val(temp.option_c);
-            // Set gambar pilihan C jika ada
-            if(temp.option_c_image) {
-                $(`#${_form} .option_c_image-hidden`).val(temp.option_c_image);
-                $('#option_c_image_preview').html('<img src="<?php echo base_url() ?>' + temp.option_c_image + '" style="max-width: 200px; max-height: 200px;" />');
-            }
-            
-            $(`#${_form} .question-option_d`).val(temp.option_d);
-            // Set gambar pilihan D jika ada
-            if(temp.option_d_image) {
-                $(`#${_form} .option_d_image-hidden`).val(temp.option_d_image);
-                $('#option_d_image_preview').html('<img src="<?php echo base_url() ?>' + temp.option_d_image + '" style="max-width: 200px; max-height: 200px;" />');
-            }
-            
-            $(`#${_form} .question-option_e`).val(temp.option_e);
-            // Set gambar pilihan E jika ada
-            if(temp.option_e_image) {
-                $(`#${_form} .option_e_image-hidden`).val(temp.option_e_image);
-                $('#option_e_image_preview').html('<img src="<?php echo base_url() ?>' + temp.option_e_image + '" style="max-width: 200px; max-height: 200px;" />');
-            }
-            
-            $(`#${_form} .question-correct_option`).val(temp.correct_option);
-            $(`#${_form} .question-explanation`).val(temp.explanation);
-            $(`#${_form} .question-video_explanation_url`).val(temp.video_explanation_url);
-        });
-
-        // Handle save
+        // Handle save - we'll keep this in case there's still a modal implementation somewhere
         $("#" + _modal + " ." + _section + "-action-save").on("click", function(e) {
             e.preventDefault();
             
@@ -552,6 +492,11 @@
             $('#option_c_image_preview').html('');
             $('#option_d_image_preview').html('');
             $('#option_e_image_preview').html('');
+            
+            // Reset group fields
+            $('.question-group_id').val('');
+            $('.question-group_order').val('1');
+            $('.question-is_group_main').val('0');
         };
 
     });

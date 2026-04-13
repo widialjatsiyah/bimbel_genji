@@ -146,7 +146,9 @@ class TryoutQuestionModel extends CI_Model
 			
 			return $result;
 		} else {
-			$this->db->order_by('tq.question_order', 'asc');
+			// Urutkan berdasarkan question_order, namun tetap menjaga urutan dalam grup
+			// Non-grouped questions first (group_id IS NULL), then grouped questions
+			$this->db->order_by('(q.group_id IS NULL), q.group_id, q.group_order, tq.question_order', 'ASC');
 			return $this->db->get()->result();
 		}
 	}

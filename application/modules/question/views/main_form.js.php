@@ -3,16 +3,14 @@
         var _key = "<?php echo $this->uri->segment(3); ?>"; // Get ID from URL segment
         var _section = "question";
         var _form = "form-question";
-
-	// tinymce.init({
-	// selector: "textarea.tinymce-math",
-	// plugins: [
-	// "eqneditor advlist autolink lists link image charmap print preview anchor",
-	// "searchreplace visualblocks code fullscreen",
-	// "insertdatetime media table contextmenu paste" ],
-	// toolbar: "undo redo | eqneditor link image | styleselect | bold italic | bullist numlist outdent indent	",
-	// selector : "textarea"  
-	// });
+        
+        // Fungsi untuk menangani gambar pilihan saat edit
+        function handleOptionImage(optionLetter, imagePath) {
+            if(imagePath) {
+                $('.option_' + optionLetter + '_image-hidden').val(imagePath);
+                $('#option_' + optionLetter + '_image_preview').html('<img src="<?php echo base_url() ?>' + imagePath + '" style="max-width: 200px; max-height: 200px;" />');
+            }
+        }
 
         // Fungsi untuk menangani preview gambar
         function previewImage(input, previewContainer) {
@@ -59,160 +57,52 @@
             }
         });
 
-        // Event listener untuk file input gambar pilihan A
-        $('[name="option_a_image_file"]').on('change', function() {
-            var previewContainer = $('#option_a_image_preview');
-            previewImage(this, previewContainer);
-            
-            if (this.files && this.files[0]) {
-                var formData = new FormData();
-                formData.append('image', this.files[0]);
-                
-                $.ajax({
-                    url: '<?php echo base_url("question/upload_image") ?>',
-                    type: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function(response) {
-                        var res = JSON.parse(response);
-                        if(res.status) {
-                            $('.option_a_image-hidden').val(res.path);
-                        } else {
-                            notify('Gagal mengupload gambar: ' + res.error, 'danger');
-                        }
-                    },
-                    error: function() {
-                        notify('Terjadi kesalahan saat upload gambar', 'danger');
-                    }
-                });
-            }
-        });
+        // Fungsi untuk menangani event listener file input gambar pilihan
+        function setupImageUploadHandlers(optionLetter) {
+            var inputName = 'option_' + optionLetter.toLowerCase() + '_image_file';
+            var hiddenClass = '.option_' + optionLetter.toLowerCase() + '_image-hidden';
+            var previewId = '#option_' + optionLetter.toLowerCase() + '_image_preview';
 
-        // Event listener untuk file input gambar pilihan B
-        $('[name="option_b_image_file"]').on('change', function() {
-            var previewContainer = $('#option_b_image_preview');
-            previewImage(this, previewContainer);
-            
-            if (this.files && this.files[0]) {
-                var formData = new FormData();
-                formData.append('image', this.files[0]);
+            $('[name="' + inputName + '"]').on('change', function() {
+                var previewContainer = $(previewId);
+                previewImage(this, previewContainer);
                 
-                $.ajax({
-                    url: '<?php echo base_url("question/upload_image") ?>',
-                    type: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function(response) {
-                        var res = JSON.parse(response);
-                        if(res.status) {
-                            $('.option_b_image-hidden').val(res.path);
-                        } else {
-                            notify('Gagal mengupload gambar: ' + res.error, 'danger');
+                if (this.files && this.files[0]) {
+                    var formData = new FormData();
+                    formData.append('image', this.files[0]);
+                    
+                    $.ajax({
+                        url: '<?php echo base_url("question/upload_image") ?>',
+                        type: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        success: function(response) {
+                            var res = JSON.parse(response);
+                            if(res.status) {
+                                $(hiddenClass).val(res.path);
+                            } else {
+                                notify('Gagal mengupload gambar: ' + res.error, 'danger');
+                            }
+                        },
+                        error: function() {
+                            notify('Terjadi kesalahan saat upload gambar', 'danger');
                         }
-                    },
-                    error: function() {
-                        notify('Terjadi kesalahan saat upload gambar', 'danger');
-                    }
-                });
-            }
-        });
+                    });
+                }
+            });
+        }
 
-        // Event listener untuk file input gambar pilihan C
-        $('[name="option_c_image_file"]').on('change', function() {
-            var previewContainer = $('#option_c_image_preview');
-            previewImage(this, previewContainer);
-            
-            if (this.files && this.files[0]) {
-                var formData = new FormData();
-                formData.append('image', this.files[0]);
-                
-                $.ajax({
-                    url: '<?php echo base_url("question/upload_image") ?>',
-                    type: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function(response) {
-                        var res = JSON.parse(response);
-                        if(res.status) {
-                            $('.option_c_image-hidden').val(res.path);
-                        } else {
-                            notify('Gagal mengupload gambar: ' + res.error, 'danger');
-                        }
-                    },
-                    error: function() {
-                        notify('Terjadi kesalahan saat upload gambar', 'danger');
-                    }
-                });
-            }
-        });
-
-        // Event listener untuk file input gambar pilihan D
-        $('[name="option_d_image_file"]').on('change', function() {
-            var previewContainer = $('#option_d_image_preview');
-            previewImage(this, previewContainer);
-            
-            if (this.files && this.files[0]) {
-                var formData = new FormData();
-                formData.append('image', this.files[0]);
-                
-                $.ajax({
-                    url: '<?php echo base_url("question/upload_image") ?>',
-                    type: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function(response) {
-                        var res = JSON.parse(response);
-                        if(res.status) {
-                            $('.option_d_image-hidden').val(res.path);
-                        } else {
-                            notify('Gagal mengupload gambar: ' + res.error, 'danger');
-                        }
-                    },
-                    error: function() {
-                        notify('Terjadi kesalahan saat upload gambar', 'danger');
-                    }
-                });
-            }
-        });
-
-        // Event listener untuk file input gambar pilihan E
-        $('[name="option_e_image_file"]').on('change', function() {
-            var previewContainer = $('#option_e_image_preview');
-            previewImage(this, previewContainer);
-            
-            if (this.files && this.files[0]) {
-                var formData = new FormData();
-                formData.append('image', this.files[0]);
-                
-                $.ajax({
-                    url: '<?php echo base_url("question/upload_image") ?>',
-                    type: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function(response) {
-                        var res = JSON.parse(response);
-                        if(res.status) {
-                            $('.option_e_image-hidden').val(res.path);
-                        } else {
-                            notify('Gagal mengupload gambar: ' + res.error, 'danger');
-                        }
-                    },
-                    error: function() {
-                        notify('Terjadi kesalahan saat upload gambar', 'danger');
-                    }
-                });
-            }
+        // Event listener untuk file input gambar pilihan A-E
+        var optionLetters = ['A', 'B', 'C', 'D', 'E'];
+        $.each(optionLetters, function(i, letter) {
+            setupImageUploadHandlers(letter);
         });
 
         // Populate form with data if editing
         if (_key) {
             $.ajax({
-                url: "<?php echo base_url('api/get/question/') ?>" + _key,
+                url: "<?php echo base_url('question/api_get_question/') ?>" + _key,
                 type: "GET",
                 success: function(response) {
                     var data = response;
@@ -232,6 +122,14 @@
                                 // Set jenis soal
                                 $('.question-type').val(data.question_type).trigger('change');
                                 
+                                // Set tipe opsi
+                                $('.question-option_type').val(data.option_type || 'text').trigger('change');
+                                
+                                // Set group fields
+                                $('.question-group_id').val(data.group_id);
+                                $('.question-group_order').val(data.group_order || 1);
+                                $('.question-is_group_main').val(data.is_group_main || 0);
+                                
                                 // Update TinyMCE jika ada
                                 if (typeof tinymce !== 'undefined' && tinymce.get('question_text')) {
                                     tinymce.get('question_text').setContent(data.question_text);
@@ -249,38 +147,23 @@
                                 if(data.question_type === 'multiple_choice') {
                                     $('.question-option_a').val(data.option_a);
                                     // Set gambar pilihan A jika ada
-                                    if(data.option_a_image) {
-                                        $('.option_a_image-hidden').val(data.option_a_image);
-                                        $('#option_a_image_preview').html('<img src="<?php echo base_url() ?>' + data.option_a_image + '" style="max-width: 200px; max-height: 200px;" />');
-                                    }
+                                    handleOptionImage('a', data.option_a_image);
                                     
                                     $('.question-option_b').val(data.option_b);
                                     // Set gambar pilihan B jika ada
-                                    if(data.option_b_image) {
-                                        $('.option_b_image-hidden').val(data.option_b_image);
-                                        $('#option_b_image_preview').html('<img src="<?php echo base_url() ?>' + data.option_b_image + '" style="max-width: 200px; max-height: 200px;" />');
-                                    }
+                                    handleOptionImage('b', data.option_b_image);
                                     
                                     $('.question-option_c').val(data.option_c);
                                     // Set gambar pilihan C jika ada
-                                    if(data.option_c_image) {
-                                        $('.option_c_image-hidden').val(data.option_c_image);
-                                        $('#option_c_image_preview').html('<img src="<?php echo base_url() ?>' + data.option_c_image + '" style="max-width: 200px; max-height: 200px;" />');
-                                    }
+                                    handleOptionImage('c', data.option_c_image);
                                     
                                     $('.question-option_d').val(data.option_d);
                                     // Set gambar pilihan D jika ada
-                                    if(data.option_d_image) {
-                                        $('.option_d_image-hidden').val(data.option_d_image);
-                                        $('#option_d_image_preview').html('<img src="<?php echo base_url() ?>' + data.option_d_image + '" style="max-width: 200px; max-height: 200px;" />');
-                                    }
+                                    handleOptionImage('d', data.option_d_image);
                                     
                                     $('.question-option_e').val(data.option_e);
                                     // Set gambar pilihan E jika ada
-                                    if(data.option_e_image) {
-                                        $('.option_e_image-hidden').val(data.option_e_image);
-                                        $('#option_e_image_preview').html('<img src="<?php echo base_url() ?>' + data.option_e_image + '" style="max-width: 200px; max-height: 200px;" />');
-                                    }
+                                    handleOptionImage('e', data.option_e_image);
                                     
                                     $('.question-correct_option').val(data.correct_option);
                                 } 
@@ -305,6 +188,15 @@
                 }
             });
         }
+
+		
+                // Fungsi untuk menangani gambar pilihan saat edit
+                function handleOptionImage(optionLetter, imagePath) {
+                    if(imagePath) {
+                        $('.option_' + optionLetter + '_image-hidden').val(imagePath);
+                        $('#option_' + optionLetter + '_image_preview').html('<img src="<?php echo base_url() ?>' + imagePath + '" style="max-width: 200px; max-height: 200px;" />');
+                    }
+                }
 
         // Chained dropdown: Subject -> Chapter
         $('.question-subject_id').on('change', function() {
@@ -365,6 +257,23 @@
             } else {
                 $('#multiple-choice-section').show();
                 $('#essay-section').hide();
+            }
+        });
+        
+        // Handle change of option type
+        $('.question-option_type').on('change', function() {
+            var optionType = $(this).val();
+            
+            if (optionType === 'text') {
+                // Sembunyikan input file gambar dan tampilkan input teks
+                $('.row[id*="option-"]').find('.col-md-6:last-child').hide(); // Sembunyikan kolom gambar
+                $('.row[id*="option-"]').find('.col-md-6:first-child').show(); // Tampilkan kolom teks
+                $('.row[id*="option-"]').find('.col-md-6:first-child input').prop('required', true); // Wajibkan teks
+            } else if (optionType === 'image') {
+                // Sembunyikan input teks dan tampilkan input file gambar
+                $('.row[id*="option-"]').find('.col-md-6:first-child').hide(); // Sembunyikan kolom teks
+                $('.row[id*="option-"]').find('.col-md-6:last-child').show(); // Tampilkan kolom gambar
+                $('.row[id*="option-"]').find('.col-md-6:first-child input').prop('required', false); // Hilangkan wajib teks
             }
         });
 
@@ -428,5 +337,43 @@
                 });
             }, 500);
         }
+        
+        // Panggil handler tipe soal dan tipe opsi untuk menyesuaikan tampilan saat halaman dimuat
+        if (_key) {
+            var currentType = $('.question-type').val();
+            var currentOptionType = $('.question-option_type').val();
+            
+            if (currentType === 'essay') {
+                $('#multiple-choice-section').hide();
+                $('#essay-section').show();
+            } else {
+                $('#multiple-choice-section').show();
+                $('#essay-section').hide();
+            }
+            
+            // Trigger change untuk menyesuaikan tampilan opsi
+            setTimeout(function() {
+                $('.question-option_type').trigger('change');
+            }, 500);
+        } else {
+            // Jika mode tambah baru, trigger change untuk tipe opsi default
+            setTimeout(function() {
+                $('.question-option_type').trigger('change');
+            }, 500);
+        }
     });
+
+	  const questionTypeSelect = document.getElementById('question_type');
+        const mcSection = document.getElementById('multiple-choice-section');
+        const essaySection = document.getElementById('essay-section');
+        
+        questionTypeSelect.addEventListener('change', function() {
+            if (this.value === 'essay') {
+                mcSection.style.display = 'none';
+                essaySection.style.display = 'block';
+            } else {
+                mcSection.style.display = 'block';
+                essaySection.style.display = 'none';
+            }
+        });
 </script>

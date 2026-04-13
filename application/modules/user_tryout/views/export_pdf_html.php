@@ -147,7 +147,12 @@
                         }
                         ?>
                         <div class="option <?= $optionClass ?>">
-                            <?= $key ?>. <?= $value ?>
+                            <?= $key ?>. <?php 
+							if($question->option_type === 'image') {
+								echo '<img src="' . base_url($value) . '" alt="Gambar Opsi" style="max-width: 200px; height: auto;" />';
+							} else {
+								echo $value;
+							} ?>
                             <?php if ($isSelected): ?> <em>(Jawaban Anda)</em> <?php endif; ?>
                             <?php if ($isCorrect): ?> <em>(Benar)</em> <?php endif; ?>
                         </div>

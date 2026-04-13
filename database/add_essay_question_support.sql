@@ -15,6 +15,7 @@ CREATE TABLE `essay_answers` (
   `evaluated_at` DATETIME NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	`is_unsure` int(2) default 0,
   FOREIGN KEY (`question_id`) REFERENCES `questions`(`id`),
   INDEX `idx_user_tryout_question` (`user_tryout_id`, `question_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

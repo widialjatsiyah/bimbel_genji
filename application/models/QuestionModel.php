@@ -4,7 +4,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 class QuestionModel extends CI_Model
 {
 	private $_table = 'questions';
-	
+
 	public function rules()
 	{
 		return array(
@@ -26,7 +26,7 @@ class QuestionModel extends CI_Model
 			[
 				'field' => 'group_id',
 				'label' => 'Grup Soal',
-				'rules' => 'integer'
+				'rules' => 'trim'
 			],
 			[
 				'field' => 'group_order',
@@ -127,7 +127,7 @@ class QuestionModel extends CI_Model
 			[
 				'field' => 'group_id',
 				'label' => 'Grup Soal',
-				'rules' => 'integer'
+				'rules' => 'trim'
 			],
 			[
 				'field' => 'group_order',
@@ -238,7 +238,7 @@ class QuestionModel extends CI_Model
 			[
 				'field' => 'group_id',
 				'label' => 'Grup Soal',
-				'rules' => 'integer'
+				'rules' => 'trim'
 			],
 			[
 				'field' => 'group_order',
@@ -323,13 +323,13 @@ class QuestionModel extends CI_Model
 			chapters.name as chapter_name,
 			topics.name as topic_name
 		")
-		->from($this->_table)
-		->join('subjects', 'subjects.id = questions.subject_id', 'left')
-		->join('chapters', 'chapters.id = questions.chapter_id', 'left')
-		->join('topics', 'topics.id = questions.topic_id', 'left')
-		->where('questions.id', $id)
-		->get()
-		->row();
+			->from($this->_table)
+			->join('subjects', 'subjects.id = questions.subject_id', 'left')
+			->join('chapters', 'chapters.id = questions.chapter_id', 'left')
+			->join('topics', 'topics.id = questions.topic_id', 'left')
+			->where('questions.id', $id)
+			->get()
+			->row();
 	}
 
 	public function insert()
@@ -346,17 +346,29 @@ class QuestionModel extends CI_Model
 			$this->curriculum = $this->input->post('curriculum');
 			$this->question_type = $this->input->post('question_type') ?: 'multiple_choice';
 			$this->question_text = $this->input->post('question_text');
-			
+
 			$this->option_type = $this->input->post('option_type') ?: 'text'; // Tipe untuk semua opsi
 			$this->question_text = $this->input->post('question_text');
-			
+
+			$type_option = $this->input->post('option_type') ?: 'text';
 			// Untuk soal esai, pilihan jawaban opsional
 			if ($this->question_type === 'multiple_choice') {
-				$this->option_a = $this->input->post('option_a');
-				$this->option_b = $this->input->post('option_b');
-				$this->option_c = $this->input->post('option_c');
-				$this->option_d = $this->input->post('option_d');
-				$this->option_e = $this->input->post('option_e');
+				if($type_option === 'text') {
+					$this->option_a = $this->input->post('option_a');
+					$this->option_b = $this->input->post('option_b');
+					$this->option_c = $this->input->post('option_c');
+					$this->option_d = $this->input->post('option_d');
+					$this->option_e = $this->input->post('option_e');
+				} else {
+					// Jika tipe opsi adalah gambar, simpan path gambar yang diupload
+					$this->option_a = $this->input->post('option_a_image') ?: null;
+					$this->option_b = $this->input->post('option_b_image') ?: null;
+					$this->option_c = $this->input->post('option_c_image') ?: null;
+					$this->option_d = $this->input->post('option_d_image') ?: null;
+					$this->option_e = $this->input->post('option_e_image') ?: null;
+				}
+				
+				// Set jawaban benar untuk soal pilihan ganda
 				$this->correct_option = $this->input->post('correct_option');
 			} else {
 				// Untuk soal esai, set opsi menjadi kosong jika tidak disediakan
@@ -367,14 +379,14 @@ class QuestionModel extends CI_Model
 				$this->option_e = $this->input->post('option_e') ?: '';
 				$this->correct_option = null; // Tidak ada jawaban benar untuk soal esai
 			}
-			
+
 			$this->explanation = $this->input->post('explanation');
 			$this->video_explanation_url = $this->input->post('video_explanation_url');
 			$this->created_by = $this->session->userdata('user')['id']; // asumsikan session user ada
-			
+
 			// Menyimpan path gambar jika ada
 			$this->question_image = $this->input->post('question_image') ?: null;
-			
+
 			// Untuk soal esai, simpan kata kunci yang diharapkan
 			$expected_keywords = $this->input->post('expected_keywords');
 			if ($expected_keywords) {
@@ -389,9 +401,9 @@ class QuestionModel extends CI_Model
 			} else {
 				$this->expected_keywords = null;
 			}
-			
+
 			$this->min_keyword_matches = $this->input->post('min_keyword_matches') ?: 1;
-			
+
 			$this->db->insert($this->_table, $this);
 			$response = array('status' => true, 'data' => 'Data soal berhasil disimpan.');
 		} catch (\Throwable $th) {
@@ -415,17 +427,29 @@ class QuestionModel extends CI_Model
 			$this->question_type = $this->input->post('question_type') ?: 'multiple_choice';
 			$this->question_text = $this->input->post('question_text');
 			
-			$this->option_type = $this->input->post('option_type') ?: 'text'; // Tipe untuk semua opsi
-			$this->question_text = $this->input->post('question_text');
-			
+			// Tambahkan tipe opsi
+			$this->option_type = $this->input->post('option_type') ?: 'text';
+
+			$type_option = $this->input->post('option_type') ?: 'text';
 			// Untuk soal esai, pilihan jawaban opsional
 			if ($this->question_type === 'multiple_choice') {
-				$this->option_a = $this->input->post('option_a');
-				$this->option_b = $this->input->post('option_b');
-				$this->option_c = $this->input->post('option_c');
-				$this->option_d = $this->input->post('option_d');
-				$this->option_e = $this->input->post('option_e');
+				if($type_option === 'text') {
+					$this->option_a = $this->input->post('option_a');
+					$this->option_b = $this->input->post('option_b');
+					$this->option_c = $this->input->post('option_c');
+					$this->option_d = $this->input->post('option_d');
+					$this->option_e = $this->input->post('option_e');
+				} else {
+					// Jika tipe opsi adalah gambar, simpan path gambar yang diupload
+					$this->option_a = $this->input->post('option_a_image') ?: null;
+					$this->option_b = $this->input->post('option_b_image') ?: null;
+					$this->option_c = $this->input->post('option_c_image') ?: null;
+					$this->option_d = $this->input->post('option_d_image') ?: null;
+					$this->option_e = $this->input->post('option_e_image') ?: null;
+				}
+				
 				$this->correct_option = $this->input->post('correct_option');
+
 			} else {
 				// Untuk soal esai, set opsi menjadi kosong jika tidak disediakan
 				$this->option_a = $this->input->post('option_a') ?: '';
@@ -434,16 +458,17 @@ class QuestionModel extends CI_Model
 				$this->option_d = $this->input->post('option_d') ?: '';
 				$this->option_e = $this->input->post('option_e') ?: '';
 				$this->correct_option = null; // Tidak ada jawaban benar untuk soal esai
+
 			}
-			
+
 			$this->explanation = $this->input->post('explanation');
 			$this->video_explanation_url = $this->input->post('video_explanation_url');
 			$this->updated_by = $this->session->userdata('user')['id'];
 			$this->updated_date = date('Y-m-d H:i:s');
-			
+
 			// Menyimpan path gambar jika ada
 			$this->question_image = $this->input->post('question_image') ?: null;
-			
+
 			// Untuk soal esai, simpan kata kunci yang diharapkan
 			$expected_keywords = $this->input->post('expected_keywords');
 			if ($expected_keywords) {
@@ -458,9 +483,9 @@ class QuestionModel extends CI_Model
 			} else {
 				$this->expected_keywords = null;
 			}
-			
+
 			$this->min_keyword_matches = $this->input->post('min_keyword_matches') ?: 1;
-			
+
 			$this->db->update($this->_table, $this, array('id' => $id));
 			$response = array('status' => true, 'data' => 'Data soal berhasil diperbarui.');
 		} catch (\Throwable $th) {
@@ -473,6 +498,32 @@ class QuestionModel extends CI_Model
 	{
 		$response = array('status' => false, 'data' => 'No operation.');
 		try {
+			// Hapus file gambar terkait jika ada
+			$question = $this->getById($id);
+			if ($question) {
+				// Hapus gambar soal
+				if ($question->question_image && file_exists(FCPATH . $question->question_image)) {
+					unlink(FCPATH . $question->question_image);
+				}
+
+				// Hapus gambar pilihan
+				if ($question->option_a_image && file_exists(FCPATH . $question->option_a_image)) {
+					unlink(FCPATH . $question->option_a_image);
+				}
+				if ($question->option_b_image && file_exists(FCPATH . $question->option_b_image)) {
+					unlink(FCPATH . $question->option_b_image);
+				}
+				if ($question->option_c_image && file_exists(FCPATH . $question->option_c_image)) {
+					unlink(FCPATH . $question->option_c_image);
+				}
+				if ($question->option_d_image && file_exists(FCPATH . $question->option_d_image)) {
+					unlink(FCPATH . $question->option_d_image);
+				}
+				if ($question->option_e_image && file_exists(FCPATH . $question->option_e_image)) {
+					unlink(FCPATH . $question->option_e_image);
+				}
+			}
+
 			$this->db->delete($this->_table, array('id' => $id));
 			$response = array('status' => true, 'data' => 'Data soal berhasil dihapus.');
 		} catch (\Throwable $th) {
@@ -490,7 +541,7 @@ class QuestionModel extends CI_Model
 	{
 		return $this->db->count_all('questions');
 	}
-	
+
 	/**
 	 * Handle upload file untuk soal tipe image
 	 * @param string $fieldName Nama field input file
@@ -513,13 +564,13 @@ class QuestionModel extends CI_Model
 			if ($oldFilePath && file_exists(FCPATH . $oldFilePath)) {
 				unlink(FCPATH . $oldFilePath);
 			}
-			
+
 			return ['status' => true, 'data' => $upload->data];
 		} else {
 			return ['status' => false, 'data' => $upload->data];
 		}
 	}
-	
+
 
 	/**
 	 * Mendapatkan soal-soal berdasarkan grup
@@ -531,7 +582,7 @@ class QuestionModel extends CI_Model
 			->get($this->_table)
 			->result();
 	}
-	
+
 	/**
 	 * Mendapatkan soal utama dari sebuah grup
 	 */
@@ -542,7 +593,7 @@ class QuestionModel extends CI_Model
 			->get($this->_table)
 			->row();
 	}
-	
+
 	/**
 	 * Mendapatkan soal-soal yang bukan bagian dari grup
 	 */
@@ -552,4 +603,70 @@ class QuestionModel extends CI_Model
 			->get($this->_table)
 			->result();
 	}
+	
+	/**
+	 * Mendapatkan atau membuat ID grup baru
+	 */
+	public function createNewGroupId()
+	{
+		// Gunakan timestamp dan ID pengguna untuk membuat ID grup unik
+		$new_group_id = time() . rand(1000, 9999);
+		
+		// Pastikan tidak ada konflik ID dengan melakukan pengecekan
+		$this->db->where('id', $new_group_id);
+		$count = $this->db->count_all_results($this->_table);
+		
+		if ($count > 0) {
+			// Jika ada konflik, tambahkan angka acak lagi
+			$new_group_id = time() . rand(10000, 99999);
+		}
+		
+		return $new_group_id;
+	}
+	
+	/**
+	 * Menetapkan soal sebagai soal utama grup
+	 */
+	public function setAsGroupMain($question_id, $group_id)
+	{
+		$data = array(
+			'group_id' => $group_id,
+			'is_group_main' => 1,
+			'group_order' => 1
+		);
+		
+		return $this->db->update($this->_table, $data, array('id' => $question_id));
+	}
+	
+	/**
+	 * Menambahkan soal ke dalam grup
+	 */
+	public function addToGroup($question_id, $group_id, $order)
+	{
+		$data = array(
+			'group_id' => $group_id,
+			'group_order' => $order
+		);
+		
+		return $this->db->update($this->_table, $data, array('id' => $question_id));
+	}
+	
+	/**
+	 * Menghapus soal dari grup
+	 */
+	public function removeFromGroup($question_id)
+	{
+		$data = array(
+			'group_id' => null,
+			'group_order' => 1,
+			'is_group_main' => 0
+		);
+		
+		return $this->db->update($this->_table, $data, array('id' => $question_id));
+	}
+	
+	/**
+	 * Mendapatkan semua soal dalam grup tertentu
+	 */
+	
 }

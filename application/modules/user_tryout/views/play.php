@@ -131,7 +131,7 @@
 		.question-grid {
 			display: grid;
 			grid-template-columns: repeat(5, 1fr);
-			gap: 10px;
+			gap: 2px;
 		}
 
 		.question-grid-item {
@@ -366,17 +366,36 @@
 				// Cek apakah soal ini bagian dari grup
 				var questionHtml = '';
 
-				// Jika soal ini adalah soal pertama dalam grup (urutan 1), tampilkan header grup
-				// if (questionData.is_group_main) {
-				//     questionHtml += '<div class="question-group-header">';
-				//     questionHtml += '</div>';
-				// }
-
-				questionHtml += questionData.question_text;
-
-				// Tambahkan gambar soal jika ada
-				if (questionData.question_image) {
-					questionHtml += '<div class="mb-3"><img src="' + BASE_URL + questionData.question_image + '" class="img-fluid" alt="Gambar Soal" /></div>';
+				// Jika soal ini adalah soal utama dalam grup, tampilkan header grup dan konten soal
+				if (questionData.is_group_main && questionData.group_id !== null) {
+					questionHtml += '<div>';
+					questionHtml += '<div class="alert alert-info"><strong>Soal Grup</strong> ' + questionData.question_text + '</div>';
+					
+					// Tambahkan gambar soal jika ada
+					if (questionData.question_image) {
+						questionHtml += '<div class="mb-3"><img src="' + BASE_URL + questionData.question_image + '" class="img-fluid rounded" style="max-width: 100%; height: auto;" alt="Gambar Soal Grup" /></div>';
+					}
+					questionHtml += '</div>';
+				} 
+				// Jika soal ini bagian dari grup tapi bukan utama
+				else if (questionData.group_id !== null && !questionData.is_group_main) {
+					questionHtml += '<div class="question-group-member mb-3">';
+					questionHtml += '<div class="alert alert-light border"><strong>Soal Lanjutan:</strong> ' + questionData.question_text + '</div>';
+					
+					// Tambahkan gambar soal jika ada
+					if (questionData.question_image) {
+						questionHtml += '<div class="mb-3"><img src="' + BASE_URL + questionData.question_image + '" class="img-fluid rounded" style="max-width: 100%; height: auto;" alt="Gambar Soal dalam Grup" /></div>';
+					}
+					questionHtml += '</div>';
+				} 
+				// Soal biasa, bukan bagian dari grup
+				else {
+					questionHtml += questionData.question_text;
+					
+					// Tambahkan gambar soal jika ada
+					if (questionData.question_image) {
+						questionHtml += '<div class="mb-3"><img src="' + BASE_URL + questionData.question_image + '" class="img-fluid rounded" style="max-width: 100%; height: auto;" alt="Gambar Soal" /></div>';
+					}
 				}
 
 				$('#question-text').html(questionHtml);
@@ -384,20 +403,21 @@
 				var optionsHtml = '';
 				// Check if the question type is multiple choice to show options
 				if (questionData.question_type === 'multiple_choice') {
+					// console.log(questionData);
 					optionsHtml += '<ul class="options-list">';
 					var letters = ['A', 'B', 'C', 'D', 'E'];
 					for (var i = 0; i < 5; i++) {
 						var letter = letters[i];
 						// Get option content and type dynamically per option
 						var optContent = questionData['option_' + letter.toLowerCase()];
-						var optType = questionData['option_type_' + letter.toLowerCase()] || 'text';
+						var optType = questionData.option_type; // Default to 'text'
 
 						// Skip if no content
 						if (!optContent) continue;
 
 						var checked = (answerMap[questions[currentIndex].question_id] && answerMap[questions[currentIndex].question_id].answer === letter) ? 'checked' : '';
 						var isSelected = (answerMap[questions[currentIndex].question_id] && answerMap[questions[currentIndex].question_id].answer === letter) ? 'selected' : '';
-
+						// console.log('Option ' + letter + ':', optContent, 'Type:', optType, 'Checked:', checked);
 						var optionContent = '';
 						if (optType === 'image') {
 							optionContent = '<img src="' + BASE_URL + optContent + '" class="img-fluid" style="max-width: 200px; margin-top: 10px;" alt="Gambar Opsi" />';
@@ -600,6 +620,8 @@
 				} else {
 					$('#btn-next').text('Selanjutnya');
 				}
+
+				updateGrid();
 			});
 
 			// Navigasi prev - hanya aktif jika waktu per soal tidak diaktifkan
@@ -618,6 +640,7 @@
 				if (currentIndex === 0) {
 					$('#btn-prev').prop('disabled', true);
 				}
+				updateGrid();
 			});
 
 			// Klik grid navigasi

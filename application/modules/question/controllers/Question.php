@@ -64,7 +64,7 @@ class Question extends AppBackend
         
         // If editing, get question data
         if ($id) {
-            $question = $this->QuestionModel->getById($id);
+            $question = $this->QuestionModel->getQuestionWithDetails($id);
             if ($question) {
                 $data['question_data'] = $question;
             }
@@ -169,19 +169,24 @@ class Question extends AppBackend
                 }
             }
             
-            // Handle option image uploads if option type is image
-            if ($this->input->post('option_type') === 'image') {
-                $option_fields = ['option_a_file', 'option_b_file', 'option_c_file', 'option_d_file', 'option_e_file'];
-                foreach ($option_fields as $field) {
-                    if (!empty($_FILES[$field]['name'])) {
-                        $upload = $this->QuestionModel->handleImageUpload($field, str_replace('_file', '', $field), 'questions');
-                        if ($upload['status']) {
-                            // Update the post data to use the uploaded image path
-                            $_POST[str_replace('_file', '', $field)] = $upload['data']->base_path;
-                        } else {
-                            echo json_encode(['status' => false, 'data' => $upload['data']]);
-                            return;
-                        }
+            // Handle option image uploads for all options
+            $option_fields = [
+                'option_a_image_file' => 'option_a_image',
+                'option_b_image_file' => 'option_b_image', 
+                'option_c_image_file' => 'option_c_image',
+                'option_d_image_file' => 'option_d_image',
+                'option_e_image_file' => 'option_e_image'
+            ];
+            
+            foreach ($option_fields as $field => $key) {
+                if (!empty($_FILES[$field]['name'])) {
+                    $upload = $this->QuestionModel->handleImageUpload($field, $key, 'questions');
+                    if ($upload['status']) {
+                        // Update the post data to use the uploaded image path
+                        $_POST[$key] = $upload['data']->base_path;
+                    } else {
+                        echo json_encode(['status' => false, 'data' => $upload['data']]);
+                        return;
                     }
                 }
             }
@@ -244,6 +249,22 @@ class Question extends AppBackend
             echo json_encode(['status' => true, 'path' => $upload['data']->base_path]);
         } else {
             echo json_encode(['status' => false, 'error' => $upload['data']]);
+        }
+    }
+    
+    /**
+     * API endpoint to get question data by ID
+     * Used in the form for editing
+     */
+    public function api_get_question($id)
+    {
+        $this->handle_ajax_request();
+        $question = $this->QuestionModel->getQuestionWithDetails($id);
+        
+        if ($question) {
+            echo json_encode($question);
+        } else {
+            show_404();
         }
     }
 }

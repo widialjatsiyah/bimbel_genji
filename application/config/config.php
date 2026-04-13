@@ -467,7 +467,8 @@ $config['csrf_exclude_uris'] = array(
     'tryout_session/ajax_get_questions_by_session',
     'tryout_session/ajax_get_questions_not_in_session',
     'tryout_session/ajax_add_questions_to_session',
-    'tryout_session/ajax_remove_question_from_session'
+    'tryout_session/ajax_remove_question_from_session',
+		'user_tryout/ajax_save_essay_answer'
 );
 
 /*
