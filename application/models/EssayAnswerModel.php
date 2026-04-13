@@ -81,6 +81,24 @@ class EssayAnswerModel extends CI_Model
         return $response;
     }
 
+    /**
+     * Calculate and update score automatically based on keywords
+     */
+    public function calculateAndUpdateScore($user_tryout_id, $question_id, $evaluator_id = null)
+    {
+        // Ambil jawaban essay
+        $essay_answer = $this->getByUserTryoutAndQuestion($user_tryout_id, $question_id);
+        if (!$essay_answer) {
+            return array('status' => false, 'data' => 'Jawaban esai tidak ditemukan.');
+        }
+        
+        // Hitung skor berdasarkan kata kunci
+        $calculated_score = $this->calculateScoreBasedOnKeywords($question_id, $essay_answer->answer_text);
+        
+        // Update skor di database
+        return $this->updateScore($essay_answer->id, $calculated_score, $evaluator_id);
+    }
+
     public function calculateScoreBasedOnKeywords($question_id, $answer_text)
     {
         // Ambil soal dan kata kunci yang diharapkan
@@ -96,19 +114,17 @@ class EssayAnswerModel extends CI_Model
             return 0;
         }
 
-        // Hitung jumlah kata kunci yang ditemukan dalam jawaban
-        $matches = 0;
+        // Hitung total skor berdasarkan kata kunci yang ditemukan
+        $total_score = 0;
         foreach ($expected_keywords as $keyword) {
             // Gunakan pencarian case-insensitive
             if (stripos($answer_text, $keyword['word']) !== false) {
-                $matches++;
+                // Tambahkan skor yang ditentukan untuk kata kunci ini
+                $total_score += $keyword['score'];
             }
         }
-
-        // Hitung persentase berdasarkan jumlah kata kunci yang cocok
-        $percentage = count($expected_keywords) > 0 ? ($matches / count($expected_keywords)) * 100 : 0;
         
-        // Pastikan tidak lebih dari 100%
-        return min($percentage, 100);
+        // Batasi skor maksimal 100
+        return min($total_score, 100);
     }
 }

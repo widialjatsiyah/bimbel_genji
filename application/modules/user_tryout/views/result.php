@@ -118,6 +118,11 @@
 
         </a>
 
+        <!-- Recalculate Essay Scores -->
+        <button type="button" class="btn btn-info px-3" onclick="recalculateEssayScores()">
+            <i class="zmdi zmdi-refresh"></i>
+            Hitung Ulang Skor Essay
+        </button>
 
         <!-- Kembali -->
         <a href="<?= base_url('tryout_list') ?>" 
@@ -159,5 +164,44 @@
             </div>
         </div>
     </div>
-
     
+    <script>
+        function recalculateEssayScores() {
+            // Disable button dan tampilkan pesan loading
+            const btn = document.querySelector('[onclick="recalculateEssayScores()"]');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="zmdi zmdi-refresh zmdi-hc-spin"></i> Menghitung...';
+            
+            // Ambil ID user_tryout dari URL atau dari variabel PHP
+            const userTryoutId = <?= $user_tryout->id ?>;
+            
+            // Kirim permintaan AJAX ke endpoint khusus untuk menghitung ulang skor essay
+            $.ajax({
+                url: '<?= base_url("user_tryout/recalculate_essay_scores/".$user_tryout->id) ?>',
+                method: 'POST',
+                data: {
+                    user_tryout_id: userTryoutId
+                },
+                success: function(response) {
+                    const result = JSON.parse(response);
+                    if(result.status) {
+                        alert('Skor essay berhasil dihitung ulang!');
+                        // Refresh halaman untuk menampilkan skor terbaru
+                        location.reload();
+                    } else {
+                        alert('Gagal menghitung ulang skor essay: ' + result.message);
+                    }
+                },
+                error: function() {
+                    alert('Terjadi kesalahan saat menghitung ulang skor essay');
+                },
+                complete: function() {
+                    // Kembalikan tombol ke kondisi semula
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="zmdi zmdi-refresh"></i> Hitung Ulang Skor Essay';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

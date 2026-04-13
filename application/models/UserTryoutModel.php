@@ -336,10 +336,23 @@ class UserTryoutModel extends CI_Model
 			
 			foreach ($tryout_questions as $tq) {
 				$question = $this->QuestionModel->getDetail(['id' => $tq->question_id]);
-				$user_answer = $this->UserAnswerModel->getAnswer($user_tryout_id, $tq->question_id);
 				
-				if ($user_answer && $user_answer->answer === $question->correct_option) {
-					$total_score += 1;
+				if ($question->question_type === 'essay') {
+					// Untuk soal essay, ambil skor dari essay_answers
+					$this->load->model('EssayAnswerModel');
+					$essay_answer = $this->EssayAnswerModel->getByUserTryoutAndQuestion($user_tryout_id, $tq->question_id);
+					
+					if ($essay_answer) {
+						// Tambahkan skor dari jawaban essay
+						$total_score += floatval($essay_answer->score);
+					}
+				} else {
+					// Untuk soal pilihan ganda, gunakan metode sebelumnya
+					$user_answer = $this->UserAnswerModel->getAnswer($user_tryout_id, $tq->question_id);
+					
+					if ($user_answer && $user_answer->answer === $question->correct_option) {
+						$total_score += 1;
+					}
 				}
 			}
 			
@@ -350,11 +363,24 @@ class UserTryoutModel extends CI_Model
 			
 			foreach ($tryout_questions as $tq) {
 				$question = $this->QuestionModel->getDetail(['id' => $tq->question_id]);
-				$user_answer = $this->UserAnswerModel->getAnswer($user_tryout_id, $tq->question_id);
 				
-				if ($user_answer && $user_answer->answer === $question->correct_option) {
-					// Add points for this question (default to 1 if not set)
-					$total_score += floatval($tq->points);
+				if ($question->question_type === 'essay') {
+					// Untuk soal essay, ambil skor dari essay_answers
+					$this->load->model('EssayAnswerModel');
+					$essay_answer = $this->EssayAnswerModel->getByUserTryoutAndQuestion($user_tryout_id, $tq->question_id);
+					
+					if ($essay_answer) {
+						// Gunakan skor dari jawaban essay dan kalikan dengan poin soal
+						$total_score += floatval($essay_answer->score) * floatval($tq->points);
+					}
+				} else {
+					// Untuk soal pilihan ganda, gunakan metode sebelumnya
+					$user_answer = $this->UserAnswerModel->getAnswer($user_tryout_id, $tq->question_id);
+					
+					if ($user_answer && $user_answer->answer === $question->correct_option) {
+						// Add points for this question (default to 1 if not set)
+						$total_score += floatval($tq->points);
+					}
 				}
 			}
 			

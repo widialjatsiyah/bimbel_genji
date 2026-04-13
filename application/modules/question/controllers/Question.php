@@ -142,12 +142,7 @@ class Question extends AppBackend
             $this->form_validation->set_rules($this->QuestionModel->rulesEssayOnly());
         } else {
             // Atur aturan validasi berbeda jika menggunakan gambar
-            $use_images = $this->input->post('question_image') || 
-                          $this->input->post('option_a') || 
-                          $this->input->post('option_b') || 
-                          $this->input->post('option_c') || 
-                          $this->input->post('option_d') || 
-                          $this->input->post('option_e');
+            $use_images = $this->input->post('question_image');
             
             if ($use_images) {
                 $this->form_validation->set_rules($this->QuestionModel->rulesWithImage());

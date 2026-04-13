@@ -483,6 +483,36 @@
 			}
 
 			// Add event handler for essay answers
+			$(document).on('input propertychange', '[id^="essay-answer-"]', function() {
+				var questionId = $(this).attr('id').replace('essay-answer-', '');
+				var answerText = $(this).val();
+				
+				$.ajax({
+					url: '<?= base_url("user_tryout/ajax_save_essay_answer") ?>',
+					method: 'POST',
+					data: {
+						user_tryout_id: userTryoutId,
+						question_id: questionId,
+						answer_text: answerText,
+						is_unsure: $('#btn-unsure').hasClass('active') ? 1 : 0
+					},
+					success: function(res) {
+						var res = JSON.parse(res);
+						if (res.status) {
+							// Update answerMap
+							if (!answerMap[questionId]) answerMap[questionId] = {};
+							answerMap[questionId].answer_text = answerText;
+							answerMap[questionId].is_unsure = $('#btn-unsure').hasClass('active') ? 1 : 0;
+							updateGrid();
+						}
+					},
+					error: function() {
+						// Jangan tampilkan error karena ini hanya autosave
+					}
+				});
+			});
+
+			// Add event handler for essay save button
 			$(document).on('click', '.save-essay-btn', function() {
 				var questionId = $(this).data('question-id');
 				var answerText = $('#essay-answer-' + questionId).val();
@@ -522,9 +552,16 @@
 					var qid = questions[i].question_id;
 					var statusClass = '';
 					if (answerMap[qid]) {
-						if (answerMap[qid].is_unsure == 1) {
+						// Cek apakah status unsure diaktifkan
+						var isUnsure = answerMap[qid].is_unsure == 1;
+						
+						if (isUnsure) {
 							statusClass = 'unsure';
-						} else if (answerMap[qid].answer) {
+						} else if (questions[i].question_type === 'essay' && answerMap[qid].hasOwnProperty('answer_text') && answerMap[qid].answer_text.trim() !== '') {
+							// Untuk soal essay, cek apakah jawaban sudah diisi
+							statusClass = 'answered';
+						} else if (questions[i].question_type !== 'essay' && answerMap[qid].answer) {
+							// Untuk soal pilihan ganda, cek apakah jawaban sudah dipilih
 							statusClass = 'answered';
 						} else {
 							statusClass = 'skipped';

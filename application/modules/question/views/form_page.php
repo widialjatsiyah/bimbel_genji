@@ -261,8 +261,13 @@
                     <div id="essay-section" style="display:none;">
                         <div class="form-group">
                             <label>Kata Kunci Jawaban Esai</label>
-                            <textarea id="expected_keywords" name="expected_keywords" class="form-control" rows="3" placeholder="Masukkan kata kunci yang diharapkan dalam jawaban, satu per baris"></textarea>
-                            <small class="form-text text-muted">Gunakan format JSON: [{"word":"kata kunci 1","score":1},{"word":"kata kunci 2","score":2}] atau tulis satu kata kunci per baris</small>
+                            <textarea id="expected_keywords_simple" class="form-control" rows="3" placeholder="Masukkan kata kunci satu per baris, format: kata kunci=skor (misalnya: pendidikan=2)"></textarea>
+                            <small class="form-text text-muted">Masukkan kata kunci satu per baris. Format: kata kunci=skor (misalnya: pendidikan=2). Kosongkan jika ingin menetapkan dalam format JSON.</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Kata Kunci Jawaban Esai (Format JSON)</label>
+                            <textarea id="expected_keywords" name="expected_keywords" class="form-control" rows="3" placeholder='Atau masukkan dalam format JSON: [{"word":"kata kunci 1","score":1},{"word":"kata kunci 2","score":2}]'></textarea>
+                            <small class="form-text text-muted">Gunakan format ini jika ingin lebih presisi: [{"word":"kata kunci 1","score":1},{"word":"kata kunci 2","score":2}]</small>
                         </div>
                         <div class="form-group">
                             <label>Minimal Cocok Kata Kunci</label>
@@ -301,136 +306,3 @@
         </div>
     </div>
 </div>
-
-<script>
-$(document).ready(function() {
-    // Handler untuk mengganti tampilan opsi berdasarkan tipe opsi
-    $('#question_option_type').change(function() {
-        var optionType = $(this).val();
-        
-        if (optionType === 'text') {
-            // Sembunyikan input file gambar dan tampilkan input teks
-            $('.row[id*="option-"]').find('.col-md-6:last-child').hide(); // Sembunyikan kolom gambar
-            $('.row[id*="option-"]').find('.col-md-6:first-child').show(); // Tampilkan kolom teks
-            $('.row[id*="option-"]').find('.col-md-6:first-child input').prop('required', true); // Wajibkan teks
-        } else if (optionType === 'image') {
-            // Sembunyikan input teks dan tampilkan input file gambar
-            $('.row[id*="option-"]').find('.col-md-6:first-child').hide(); // Sembunyikan kolom teks
-            $('.row[id*="option-"]').find('.col-md-6:last-child').show(); // Tampilkan kolom gambar
-            $('.row[id*="option-"]').find('.col-md-6:first-child input').prop('required', false); // Hilangkan wajib teks
-        }
-    });
-    
-    // Handler untuk mengganti tampilan berdasarkan jenis soal
-    $('.question-type').change(function() {
-        var type = $(this).val();
-        if (type === 'essay') {
-            $('#multiple-choice-section').hide();
-            $('#essay-section').show();
-        } else {
-            $('#multiple-choice-section').show();
-            $('#essay-section').hide();
-        }
-    });
-
-    <?php if($question_data): ?>
-    // Jika sedang mengedit, isi data dari model
-    $('.question-subject_id').val(<?= $question_data->subject_id ?>).trigger('change.select2');
-    setTimeout(function() {
-        $('.question-chapter_id').val(<?= $question_data->chapter_id ?>).trigger('change.select2');
-        setTimeout(function() {
-            $('.question-topic_id').val(<?= $question_data->topic_id ?>).trigger('change.select2');
-        }, 300);
-    }, 300);
-
-    $('.question-difficulty').val('<?= $question_data->difficulty ?>');
-    $('.question-curriculum').val('<?= $question_data->curriculum ?>');
-    $('.question-type').val('<?= $question_data->question_type ?>').trigger('change');
-    $('.question-option_type').val('<?= $question_data->option_type ?>').trigger('change');
-    
-    // Atur tampilan berdasarkan jenis soal
-    if ('<?= $question_data->question_type ?>' === 'essay') {
-        $('#multiple-choice-section').hide();
-        $('#essay-section').show();
-    } else {
-        $('#multiple-choice-section').show();
-        $('#essay-section').hide();
-    }
-    
-    // Isi teks soal
-    $('.question-question_text').val('<?= addslashes($question_data->question_text) ?>');
-    if (typeof tinymce !== 'undefined' && tinymce.activeEditor) {
-        tinymce.activeEditor.setContent('<?= addslashes($question_data->question_text) ?>');
-    } else {
-        // Jika TinyMCE belum aktif, atur timeout
-        setTimeout(function() {
-            if (typeof tinymce !== 'undefined' && tinymce.activeEditor) {
-                tinymce.activeEditor.setContent('<?= addslashes($question_data->question_text) ?>');
-            } else {
-                $('.question-question_text').val('<?= addslashes($question_data->question_text) ?>');
-            }
-        }, 1000);
-    }
-
-    // Isi gambar soal jika ada
-    if ('<?= $question_data->question_image ?>') {
-        $('.question-image-hidden').val('<?= $question_data->question_image ?>');
-        $('#question_image_preview').html('<img src="<?= base_url($question_data->question_image) ?>" style="max-width: 200px; max-height: 200px;" />');
-    }
-
-    // Isi data pilihan ganda jika soal bukan essay
-    if ('<?= $question_data->question_type ?>' === 'multiple_choice') {
-        $('.question-option_a').val('<?= addslashes($question_data->option_a) ?>');
-        $('.question-option_b').val('<?= addslashes($question_data->option_b) ?>');
-        $('.question-option_c').val('<?= addslashes($question_data->option_c) ?>');
-        $('.question-option_d').val('<?= addslashes($question_data->option_d) ?>');
-        $('.question-option_e').val('<?= addslashes($question_data->option_e) ?>');
-        $('.question-correct_option').val('<?= $question_data->correct_option ?>');
-        
-        // Tampilkan gambar pilihan jika ada
-        if ('<?= $question_data->option_a_image ?>') {
-            $('.option_a_image-hidden').val('<?= $question_data->option_a_image ?>');
-            $('#option_a_image_preview').html('<img src="<?= base_url($question_data->option_a_image) ?>" style="max-width: 200px; max-height: 200px;" />');
-        }
-        if ('<?= $question_data->option_b_image ?>') {
-            $('.option_b_image-hidden').val('<?= $question_data->option_b_image ?>');
-            $('#option_b_image_preview').html('<img src="<?= base_url($question_data->option_b_image) ?>" style="max-width: 200px; max-height: 200px;" />');
-        }
-        if ('<?= $question_data->option_c_image ?>') {
-            $('.option_c_image-hidden').val('<?= $question_data->option_c_image ?>');
-            $('#option_c_image_preview').html('<img src="<?= base_url($question_data->option_c_image) ?>" style="max-width: 200px; max-height: 200px;" />');
-        }
-        if ('<?= $question_data->option_d_image ?>') {
-            $('.option_d_image-hidden').val('<?= $question_data->option_d_image ?>');
-            $('#option_d_image_preview').html('<img src="<?= base_url($question_data->option_d_image) ?>" style="max-width: 200px; max-height: 200px;" />');
-        }
-        if ('<?= $question_data->option_e_image ?>') {
-            $('.option_e_image-hidden').val('<?= $question_data->option_e_image ?>');
-            $('#option_e_image_preview').html('<img src="<?= base_url($question_data->option_e_image) ?>" style="max-width: 200px; max-height: 200px;" />');
-        }
-    } 
-    // Isi data essay jika soal essay
-    else if ('<?= $question_data->question_type ?>' === 'essay') {
-        if ('<?= $question_data->expected_keywords ?>') {
-            $('#expected_keywords').val('<?= addslashes($question_data->expected_keywords) ?>');
-        }
-        if ('<?= $question_data->min_keyword_matches ?>') {
-            $('input[name="min_keyword_matches"]').val('<?= $question_data->min_keyword_matches ?>');
-        }
-    }
-
-    // Isi pembahasan dan video
-    if ('<?= $question_data->explanation ?>') {
-        $('.question-explanation').val('<?= addslashes($question_data->explanation) ?>');
-    }
-    if ('<?= $question_data->video_explanation_url ?>') {
-        $('.question-video_explanation_url').val('<?= $question_data->video_explanation_url ?>');
-    }
-    <?php endif; ?>
-    
-    // Trigger change untuk menyesuaikan tampilan saat halaman dimuat
-    setTimeout(function() {
-        $('#question_option_type').trigger('change');
-    }, 500);
-});
-</script>

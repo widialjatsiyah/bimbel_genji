@@ -243,7 +243,75 @@ class User_tryout extends AppBackend
         $result = $this->UserAnswerModel->saveAnswer($user_tryout_id, $question_id, $answer, $is_unsure);
         echo json_encode($result);
     }
+    
+    public function recalculate_essay_scores($user_tryout_id = null)
+    {
+        $this->handle_ajax_request();
+        
+        if (!$user_tryout_id) {
+            $user_tryout_id = $this->input->post('user_tryout_id');
+        }
+        
+        if (!$user_tryout_id) {
+            echo json_encode(['status' => false, 'message' => 'User tryout ID diperlukan']);
+            return;
+        }
+        
+        // Ambil semua jawaban essay untuk user_tryout ini
+        $this->load->model('EssayAnswerModel');
+        $this->db->where('user_tryout_id', $user_tryout_id);
+        $essay_answers = $this->db->get('essay_answers')->result();
+        
+        $updated_count = 0;
+        $error_count = 0;
+        
+        foreach ($essay_answers as $answer) {
+            // Hitung dan update skor otomatis
+            $result = $this->EssayAnswerModel->calculateAndUpdateScore($user_tryout_id, $answer->question_id);
+            if ($result['status']) {
+                $updated_count++;
+            } else {
+                $error_count++;
+            }
+        }
+        
+        // Hitung ulang total skor untuk user_tryout ini
+        $this->load->model('UserTryoutModel');
+        $user_tryout = $this->UserTryoutModel->getDetail(['id' => $user_tryout_id]);
+        $new_total_score = $this->UserTryoutModel->calculateScore($user_tryout_id, $user_tryout->tryout_session_id);
+        
+        // Update total skor di tabel user_tryouts
+        $this->db->where('id', $user_tryout_id);
+        $this->db->update('user_tryouts', ['total_score' => $new_total_score]);
+        
+        echo json_encode([
+            'status' => true, 
+            'message' => "$updated_count jawaban essay berhasil diperbarui, $error_count gagal."
+        ]);
+    }
+    
+    public function ajax_calculate_essay_score()
+    {
+        $this->handle_ajax_request();
 
+        $user_tryout_id = $this->input->post('user_tryout_id');
+        $question_id = $this->input->post('question_id');
+
+        // Validasi input
+        if (!$user_tryout_id || !$question_id) {
+            echo json_encode(['status' => false, 'message' => 'Parameter tidak lengkap']);
+            return;
+        }
+
+        // Load EssayAnswerModel
+        $this->load->model('EssayAnswerModel');
+        
+        // Hitung dan update skor otomatis
+        $result = $this->EssayAnswerModel->calculateAndUpdateScore($user_tryout_id, $question_id);
+        
+        echo json_encode($result);
+    }
+    
     public function ajax_save_essay_answer()
     {
         $this->handle_ajax_request();
@@ -264,9 +332,13 @@ class User_tryout extends AppBackend
         
         if ($existing_answer) {
             // Update jawaban yang sudah ada
-            $this->db->where('id', $existing_answer->id);
+            $this->db->where([
+                'user_tryout_id' => $user_tryout_id,
+                'question_id' => $question_id
+            ]);
             $this->db->update('essay_answers', [
                 'answer_text' => $answer_text,
+                'is_unsure' => $is_unsure,
                 'updated_at' => date('Y-m-d H:i:s')
             ]);
             
@@ -283,6 +355,9 @@ class User_tryout extends AppBackend
             
             $result = ['status' => true, 'message' => 'Jawaban esai disimpan'];
         }
+
+        // Secara otomatis hitung skor berdasarkan kata kunci
+        $this->EssayAnswerModel->calculateAndUpdateScore($user_tryout_id, $question_id);
 
         echo json_encode($result);
     }

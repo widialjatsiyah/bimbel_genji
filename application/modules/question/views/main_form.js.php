@@ -338,6 +338,54 @@
             }, 500);
         }
         
+        // Handler untuk mengkonversi input sederhana ke format JSON
+        $('#expected_keywords_simple').on('input', function() {
+            var simpleInput = $(this).val();
+            if (simpleInput.trim() !== '') {
+                var lines = simpleInput.split('\n');
+                var keywords = [];
+                
+                for (var i = 0; i < lines.length; i++) {
+                    var line = lines[i].trim();
+                    if (line) {
+                        var parts = line.split('=');
+                        var word = parts[0].trim();
+                        var score = 1; // default score
+                        
+                        if (parts.length > 1) {
+                            score = parseInt(parts[1]) || 1;
+                        }
+                        
+                        keywords.push({"word": word, "score": score});
+                    }
+                }
+                
+                var jsonString = JSON.stringify(keywords);
+                $('#expected_keywords').val(jsonString);
+            }
+        });
+        
+        // Handler untuk mengisi input sederhana dari JSON jika ada
+        $('#expected_keywords').on('input', function() {
+            var jsonInput = $(this).val();
+            if (jsonInput.trim() !== '') {
+                try {
+                    var jsonObj = JSON.parse(jsonInput);
+                    if (Array.isArray(jsonObj)) {
+                        var simpleLines = [];
+                        for (var i = 0; i < jsonObj.length; i++) {
+                            simpleLines.push(jsonObj[i].word + '=' + jsonObj[i].score);
+                        }
+                        $('#expected_keywords_simple').val(simpleLines.join('\n'));
+                    }
+                } catch (e) {
+                    // Jika bukan format JSON yang valid, abaikan
+                }
+            } else {
+                $('#expected_keywords_simple').val('');
+            }
+        });
+        
         // Panggil handler tipe soal dan tipe opsi untuk menyesuaikan tampilan saat halaman dimuat
         if (_key) {
             var currentType = $('.question-type').val();
@@ -363,17 +411,20 @@
         }
     });
 
-	  const questionTypeSelect = document.getElementById('question_type');
-        const mcSection = document.getElementById('multiple-choice-section');
-        const essaySection = document.getElementById('essay-section');
+	  // Handler untuk mengganti tampilan berdasarkan jenis soal
+      const questionTypeSelect = document.getElementById('question_type');
+      const mcSection = document.getElementById('multiple-choice-section');
+      const essaySection = document.getElementById('essay-section');
         
-        questionTypeSelect.addEventListener('change', function() {
-            if (this.value === 'essay') {
-                mcSection.style.display = 'none';
-                essaySection.style.display = 'block';
-            } else {
-                mcSection.style.display = 'block';
-                essaySection.style.display = 'none';
-            }
-        });
+      questionTypeSelect.addEventListener('change', function() {
+          if (this.value === 'essay') {
+              mcSection.style.display = 'none';
+              essaySection.style.display = 'block';
+          } else {
+              mcSection.style.display = 'block';
+              essaySection.style.display = 'none';
+          }
+      });
+
+	  
 </script>
