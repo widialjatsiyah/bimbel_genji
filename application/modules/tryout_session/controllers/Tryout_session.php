@@ -110,7 +110,7 @@ class Tryout_session extends AppBackend
         }
         
         $questions = $this->db
-            ->select('tq.question_order, tq.question_id, q.question_text, tq.points')
+            ->select('tq.question_order, tq.question_id, q.question_text, tq.points, tq.time_limit')
             ->from('tryout_questions tq')
             ->join('questions q', 'q.id = tq.question_id')
             ->where('tq.tryout_session_id', $session_id)

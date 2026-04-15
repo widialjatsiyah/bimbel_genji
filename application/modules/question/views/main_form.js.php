@@ -4,13 +4,6 @@
         var _section = "question";
         var _form = "form-question";
         
-        // Fungsi untuk menangani gambar pilihan saat edit
-        function handleOptionImage(optionLetter, imagePath) {
-            if(imagePath) {
-                $('.option_' + optionLetter + '_image-hidden').val(imagePath);
-                $('#option_' + optionLetter + '_image_preview').html('<img src="<?php echo base_url() ?>' + imagePath + '" style="max-width: 200px; max-height: 200px;" />');
-            }
-        }
 
         // Fungsi untuk menangani preview gambar
         function previewImage(input, previewContainer) {

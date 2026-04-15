@@ -75,6 +75,30 @@ class Question extends AppBackend
         $this->template->render();
     }
 
+	
+    public function form_edit($id = null)
+    {
+        $subjects = $this->SubjectModel->getAll([], 'name', 'asc');
+        $list_subject = $this->init_list($subjects, 'id', 'name');
+         // If editing, get question data
+        if ($id) {
+            $question = $this->QuestionModel->getQuestionWithDetails($id);
+	   
+        }
+        $data = [
+            'app' => $this->app(),
+            'main_js' => $this->load_main_js('question/views/main_form.js.php', true),
+            'card_title' => ($id) ? 'Ubah Soal' : 'Tambah Soal',
+            'list_subject' => $list_subject,
+            'question_data' => $question
+        ];
+		
+	   
+        $this->template->set('title', $data['card_title'] . ' | ' . $data['app']->app_name, TRUE);
+        $this->template->load_view('form_page_edit', $data, TRUE);
+        $this->template->render();
+    }
+
     /**
      * Handle AJAX request to get all questions with DataTables integration
      */
@@ -98,7 +122,8 @@ class Question extends AppBackend
                 'questions.created_at',
                 'questions.subject_id',
                 'questions.chapter_id',
-                'questions.topic_id'
+                'questions.topic_id',
+				'questions.expected_keywords',
             ],
             'table_name' => 'questions',
             'table_join' => [

@@ -562,7 +562,16 @@ class QuestionModel extends CI_Model
 			// Hapus file lama jika ada dan ingin diganti
 			$oldFilePath = $this->input->post($key); // Get old file path from hidden input
 			if ($oldFilePath && file_exists(FCPATH . $oldFilePath)) {
+				// Cek apakah ini file gambar dan hapus thumbnail terkait juga
+				$imagePathInfo = pathinfo($oldFilePath);
+				$thumbPath = $imagePathInfo['dirname'] . '/' . $imagePathInfo['filename'] . '_thumb.' . $imagePathInfo['extension'];
+				
 				unlink(FCPATH . $oldFilePath);
+				
+				// Hapus thumbnail jika ada
+				if (file_exists(FCPATH . $thumbPath)) {
+					unlink(FCPATH . $thumbPath);
+				}
 			}
 
 			return ['status' => true, 'data' => $upload->data];

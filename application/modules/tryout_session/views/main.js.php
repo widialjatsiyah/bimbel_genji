@@ -350,6 +350,7 @@
                         {
                             data: "time_limit",
                             render: function(data, type, row) {
+								// console.log(data);
                                 // Create input field for time limit
                                 return '<input type="number" min="0" class="form-control input-time-limit" data-session-id="' + $("#current_session_id").val() + '" data-question-id="' + row.question_id + '" value="' + (data || 0) + '" style="width: 120px;" placeholder="Detik (0=tanpa batas)"> <small class="text-muted">detik</small>';
                             }
@@ -370,6 +371,10 @@
                     sDom: '<"dataTables_ct"><"dataTables__top"f>rt<"dataTables__bottom"ip><"clear">',
                 });
                 
+            }
+        }
+
+		
                 // Handle points input change
                 $('#' + _questionsTable).on('change', '.input-points', function() {
                     var sessionId = $(this).data('session-id');
@@ -468,8 +473,6 @@
                         }
                     });
                 });
-            }
-        }
 
         // Handle save questions to session
         $("#" + _manageQuestionsModal + " .manage-questions-action-save").on("click", function(e) {

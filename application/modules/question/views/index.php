@@ -22,7 +22,7 @@
                             <th>Bab</th>
                             <th>Topik</th>
                             <th>Kesulitan</th>
-                            <th>Kurikulum</th>
+                            <th>Type</th>
                             <th>Jawaban</th>
                             <th>Status</th>
                             <th>Dibuat</th>
