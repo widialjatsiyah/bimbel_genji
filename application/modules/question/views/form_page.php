@@ -7,6 +7,9 @@
                 <form id="form-question" autocomplete="off">
                     <!-- CSRF -->
                     <input type="hidden" name="<?php echo $this->security->get_csrf_token_name(); ?>" value="<?php echo $this->security->get_csrf_hash(); ?>" />
+                    <?php if(isset($question_data) && $question_data): ?>
+                    <input type="hidden" name="id" value="<?=$question_data->id?>" />
+                    <?php endif; ?>
 
                     <div class="row">
                         <div class="col-md-6">
@@ -26,6 +29,7 @@
                                 <div class="select">
                                     <select name="chapter_id" class="form-control select2 question-chapter_id" data-placeholder="Pilih Bab (opsional)">
                                         <option value=""></option>
+                                        <?= isset($list_chapter) ? $list_chapter : '' ?>
                                     </select>
                                 </div>
                             </div>
@@ -39,6 +43,7 @@
                                 <div class="select">
                                     <select name="topic_id" class="form-control select2 question-topic_id" data-placeholder="Pilih Topik (opsional)">
                                         <option value=""></option>
+                                        <?= isset($list_topic) ? $list_topic : '' ?>
                                     </select>
                                 </div>
                             </div>
@@ -50,9 +55,9 @@
                                         <label required>Tingkat Kesulitan</label>
                                         <div class="select">
                                             <select name="difficulty" class="form-control question-difficulty" required>
-                                                <option value="mudah">Mudah</option>
-                                                <option value="sedang" selected>Sedang</option>
-                                                <option value="sulit">Sulit</option>
+                                                <option value="mudah" <?= isset($question_data) && $question_data->difficulty === 'mudah' ? 'selected' : '' ?>>Mudah</option>
+                                                <option value="sedang" <?= isset($question_data) && $question_data->difficulty === 'sedang' ? 'selected' : '' ?>>Sedang</option>
+                                                <option value="sulit" <?= isset($question_data) && $question_data->difficulty === 'sulit' ? 'selected' : '' ?>>Sulit</option>
                                             </select>
                                         </div>
                                     </div>
@@ -62,9 +67,9 @@
                                         <label required>Kurikulum</label>
                                         <div class="select">
                                             <select name="curriculum" class="form-control question-curriculum" required>
-                                                <option value="Kurikulum Merdeka" selected>Kurikulum Merdeka</option>
-                                                <option value="K13">K13</option>
-                                                <option value="Lainnya">Lainnya</option>
+                                                <option value="Kurikulum Merdeka" <?= isset($question_data) && $question_data->curriculum === 'Kurikulum Merdeka' ? 'selected' : '' ?>>Kurikulum Merdeka</option>
+                                                <option value="K13" <?= isset($question_data) && $question_data->curriculum === 'K13' ? 'selected' : '' ?>>K13</option>
+                                                <option value="Lainnya" <?= isset($question_data) && $question_data->curriculum === 'Lainnya' ? 'selected' : '' ?>>Lainnya</option>
                                             </select>
                                         </div>
                                     </div>
@@ -78,8 +83,8 @@
                             <div class="form-group">
                                 <label required>Tipe Opsi</label>
                                 <select name="option_type" class="form-control question-option_type" id="question_option_type">
-                                    <option value="text">Teks</option>
-                                    <option value="image">Gambar</option>
+                                    <option value="text" <?= isset($question_data) && $question_data->option_type === 'text' ? 'selected' : '' ?>>Teks</option>
+                                    <option value="image" <?= isset($question_data) && $question_data->option_type === 'image' ? 'selected' : '' ?>>Gambar</option>
                                 </select>
                                 <i class="form-group__bar"></i>
                             </div>
@@ -89,8 +94,8 @@
                                 <label required>Jenis Soal</label>
                                 <div class="select">
                                     <select name="question_type" class="form-control question-type" id="question_type" required>
-                                        <option value="multiple_choice">Pilihan Ganda</option>
-                                        <option value="essay">Esai</option>
+                                        <option value="multiple_choice" <?= isset($question_data) && $question_data->question_type === 'multiple_choice' ? 'selected' : '' ?>>Pilihan Ganda</option>
+                                        <option value="essay" <?= isset($question_data) && $question_data->question_type === 'essay' ? 'selected' : '' ?>>Esai</option>
                                     </select>
                                 </div>
                             </div>
@@ -102,14 +107,14 @@
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label>Grup Soal</label>
-                                <input type="text" name="group_id" class="form-control question-group_id" placeholder="ID Grup (opsional)" />
+                                <input type="text" name="group_id" class="form-control question-group_id" placeholder="ID Grup (opsional)" value="<?= isset($question_data) ? htmlspecialchars($question_data->group_id) : '' ?>" />
                                 <i class="form-group__bar"></i>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label>Urutan dalam Grup</label>
-                                <input type="number" name="group_order" class="form-control question-group_order" min="1" value="1" placeholder="Nomor urut dalam grup" />
+                                <input type="number" name="group_order" class="form-control question-group_order" min="1" value="<?= isset($question_data) ? htmlspecialchars($question_data->group_order ?: 1) : '1' ?>" placeholder="Nomor urut dalam grup" />
                                 <i class="form-group__bar"></i>
                             </div>
                         </div>
@@ -118,8 +123,8 @@
                                 <label>Soal Utama Grup</label>
                                 <div class="select">
                                     <select name="is_group_main" class="form-control question-is_group_main">
-                                        <option value="0" selected>Biasa</option>
-                                        <option value="1">Utama (Memiliki Narasi)</option>
+                                        <option value="0" <?= isset($question_data) && !$question_data->is_group_main ? 'selected' : '' ?>>Biasa</option>
+                                        <option value="1" <?= isset($question_data) && $question_data->is_group_main ? 'selected' : '' ?>>Utama (Memiliki Narasi)</option>
                                     </select>
                                 </div>
                             </div>
@@ -128,7 +133,7 @@
 
                     <div class="form-group">
                         <label required>Teks Soal</label>
-                        <textarea name="question_text" class="form-control question-question_text tinymce-init" rows="4" placeholder="Tulis soal di sini..." required></textarea>
+                        <textarea id="question_text" name="question_text" class="form-control question-question_text tinymce-init" rows="4" placeholder="Tulis soal di sini..." required><?= isset($question_data) ? htmlspecialchars($question_data->question_text) : '' ?></textarea>
                         <i class="form-group__bar"></i>
                     </div>
 
@@ -136,8 +141,10 @@
                     <div class="form-group">
                         <label>Gambar Soal</label>
                         <input type="file" name="question_image_file" class="form-control question-image" accept="image/*" />
-                        <input type="hidden" name="question_image" class="question-image-hidden" />
-                        <div id="question_image_preview" class="mt-2"></div>
+                        <input type="hidden" name="question_image" class="question-image-hidden" value="<?= isset($question_data) ? htmlspecialchars($question_data->question_image) : '' ?>" />
+                        <div id="question_image_preview" class="mt-2">
+                            <?= isset($question_data) && $question_data->question_image ? '<img src="' . base_url($question_data->question_image) . '" style="max-width: 200px; max-height: 200px;" />' : '' ?>
+                        </div>
                         <i class="form-group__bar"></i>
                     </div>
 

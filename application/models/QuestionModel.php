@@ -350,6 +350,8 @@ class QuestionModel extends CI_Model
 			$this->option_type = $this->input->post('option_type') ?: 'text'; // Tipe untuk semua opsi
 			$this->question_text = $this->input->post('question_text');
 
+			// Menyimpan path gambar jika ada
+			$this->question_image = $this->input->post('question_image') ?: null;
 			$type_option = $this->input->post('option_type') ?: 'text';
 			// Untuk soal esai, pilihan jawaban opsional
 			if ($this->question_type === 'multiple_choice') {
@@ -359,15 +361,27 @@ class QuestionModel extends CI_Model
 					$this->option_c = $this->input->post('option_c');
 					$this->option_d = $this->input->post('option_d');
 					$this->option_e = $this->input->post('option_e');
+					// Kosongkan field gambar
+					$this->option_a_image = null;
+					$this->option_b_image = null;
+					$this->option_c_image = null;
+					$this->option_d_image = null;
+					$this->option_e_image = null;
 				} else {
-					// Jika tipe opsi adalah gambar, simpan path gambar yang diupload
-					$this->option_a = $this->input->post('option_a_image') ?: null;
-					$this->option_b = $this->input->post('option_b_image') ?: null;
-					$this->option_c = $this->input->post('option_c_image') ?: null;
-					$this->option_d = $this->input->post('option_d_image') ?: null;
-					$this->option_e = $this->input->post('option_e_image') ?: null;
+					// Jika tipe opsi adalah gambar, gunakan path dari hidden input
+					$this->option_a_image = $this->input->post('option_a_image') ?: null;
+					$this->option_b_image = $this->input->post('option_b_image') ?: null;
+					$this->option_c_image = $this->input->post('option_c_image') ?: null;
+					$this->option_d_image = $this->input->post('option_d_image') ?: null;
+					$this->option_e_image = $this->input->post('option_e_image') ?: null;
+					// Kosongkan field teks
+					$this->option_a = null;
+					$this->option_b = null;
+					$this->option_c = null;
+					$this->option_d = null;
+					$this->option_e = null;
 				}
-				
+
 				// Set jawaban benar untuk soal pilihan ganda
 				$this->correct_option = $this->input->post('correct_option');
 			} else {
@@ -384,8 +398,6 @@ class QuestionModel extends CI_Model
 			$this->video_explanation_url = $this->input->post('video_explanation_url');
 			$this->created_by = $this->session->userdata('user')['id']; // asumsikan session user ada
 
-			// Menyimpan path gambar jika ada
-			$this->question_image = $this->input->post('question_image') ?: null;
 
 			// Untuk soal esai, simpan kata kunci yang diharapkan
 			$expected_keywords = $this->input->post('expected_keywords');
@@ -440,7 +452,7 @@ class QuestionModel extends CI_Model
 					$this->option_d = $this->input->post('option_d');
 					$this->option_e = $this->input->post('option_e');
 				} else {
-					// Jika tipe opsi adalah gambar, simpan path gambar yang diupload
+					// Jika tipe opsi adalah gambar, gunakan path dari hidden input
 					$this->option_a = $this->input->post('option_a_image') ?: null;
 					$this->option_b = $this->input->post('option_b_image') ?: null;
 					$this->option_c = $this->input->post('option_c_image') ?: null;
@@ -552,6 +564,11 @@ class QuestionModel extends CI_Model
 	public function handleImageUpload($fieldName, $key, $uploadPath = 'questions')
 	{
 		if (empty($_FILES[$fieldName]['name'])) {
+			// Jika tidak ada file baru yang diupload, gunakan path yang sudah ada di hidden input
+			$existingPath = $this->input->post($key);
+			if ($existingPath) {
+				return ['status' => true, 'data' => (object)['base_path' => $existingPath]];
+			}
 			return ['status' => false, 'data' => 'No file uploaded.'];
 		}
 

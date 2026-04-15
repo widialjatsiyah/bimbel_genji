@@ -157,8 +157,8 @@ class Tryout_session extends AppBackend
         foreach ($questions as $q) {
             $results[] = array(
                 'id' => $q->id,
-                'text' => strlen($q->question_text) > 100 ? 
-                         substr($q->question_text, 0, 100) . '...' : 
+                'text' => strlen($q->question_text) > 500 ? 
+                         substr($q->question_text, 0, 500) . '...' : 
                          $q->question_text
             );
         }

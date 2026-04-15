@@ -326,7 +326,7 @@
                             data: "question_text",
                             render: function(data) {
                                 // Truncate question text if too long
-                                return data ? (data.length > 100 ? data.substring(0, 100) + '...' : data) : '-';
+                                return data ? (data.length > 500 ? data.substring(0, 500) + '...' : data) : '-';
                             }
                         },
                         // {

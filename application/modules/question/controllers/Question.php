@@ -75,25 +75,53 @@ class Question extends AppBackend
         $this->template->render();
     }
 
-	
+    /**
+     * Display the form for editing a question
+     * @param null $id The ID of the question to edit
+     */
     public function form_edit($id = null)
     {
-        $subjects = $this->SubjectModel->getAll([], 'name', 'asc');
-        $list_subject = $this->init_list($subjects, 'id', 'name');
-         // If editing, get question data
-        if ($id) {
-            $question = $this->QuestionModel->getQuestionWithDetails($id);
-	   
+        if (!$id) {
+            redirect('question');
         }
+
+        $subjects = $this->SubjectModel->getAll([], 'name', 'asc');
+        $question = $this->QuestionModel->getQuestionWithDetails($id);
+
+        if (!$question) {
+            redirect('question');
+        }
+
+        $selected_subject_id = $question->subject_id;
+        $selected_chapter_id = $question->chapter_id;
+        $selected_topic_id = $question->topic_id;
+
+        $list_subject = $this->init_list($subjects, 'id', 'name', $selected_subject_id);
+
+        $chapters = [];
+        $topics = [];
+        if ($selected_subject_id) {
+            $chapters = $this->ChapterModel->getAll(['subject_id' => $selected_subject_id], 'name', 'asc');
+        }
+        if ($selected_chapter_id) {
+            $topics = $this->TopicModel->getAll(['chapter_id' => $selected_chapter_id], 'name', 'asc');
+        }
+
+        $list_chapter = $this->init_list($chapters, 'id', 'name', $selected_chapter_id);
+        $list_topic = $this->init_list($topics, 'id', 'name', $selected_topic_id);
+
         $data = [
             'app' => $this->app(),
-            'main_js' => $this->load_main_js('question/views/main_form.js.php', true),
-            'card_title' => ($id) ? 'Ubah Soal' : 'Tambah Soal',
+            'main_js' => $this->load_main_js('question/views/main_form_edit.js.php', true,
+			array('question_data' => $question) // passing question data to JS for pre-filling form
+			),
+            'card_title' => 'Ubah Soal',
             'list_subject' => $list_subject,
+            'list_chapter' => $list_chapter,
+            'list_topic' => $list_topic,
             'question_data' => $question
         ];
-		
-	   
+
         $this->template->set('title', $data['card_title'] . ' | ' . $data['app']->app_name, TRUE);
         $this->template->load_view('form_page_edit', $data, TRUE);
         $this->template->render();
@@ -180,16 +208,18 @@ class Question extends AppBackend
             // Handle image uploads
             $this->load->library('CpUpload');
             
-            // Handle question image upload
+            // Handle question image upload - hanya upload jika ada file baru
             if (!empty($_FILES['question_image_file']['name'])) {
                 $upload = $this->QuestionModel->handleImageUpload('question_image_file', 'question_image', 'questions');
                 if (!$upload['status']) {
                     echo json_encode(['status' => false, 'data' => $upload['data']]);
                     return;
                 }
+                // Update post data so DB stores the latest uploaded path
+                $_POST['question_image'] = $upload['data']->base_path;
             }
             
-            // Handle option image uploads for all options
+            // Handle option image uploads for all options - hanya upload jika ada file baru
             $option_fields = [
                 'option_a_image_file' => 'option_a_image',
                 'option_b_image_file' => 'option_b_image', 
@@ -199,6 +229,7 @@ class Question extends AppBackend
             ];
             
             foreach ($option_fields as $field => $key) {
+                // Hanya upload jika ada file baru di $_FILES
                 if (!empty($_FILES[$field]['name'])) {
                     $upload = $this->QuestionModel->handleImageUpload($field, $key, 'questions');
                     if ($upload['status']) {
@@ -207,6 +238,14 @@ class Question extends AppBackend
                     } else {
                         echo json_encode(['status' => false, 'data' => $upload['data']]);
                         return;
+                    }
+                } else {
+                    // Jika tidak ada file baru diupload, gunakan path yang ada di hidden input
+                    $existingPath = $this->input->post($key);
+                    if ($existingPath) {
+                        $_POST[$key] = $existingPath;
+                    } else {
+                        $_POST[$key] = null;
                     }
                 }
             }
