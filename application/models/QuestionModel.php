@@ -361,25 +361,14 @@ class QuestionModel extends CI_Model
 					$this->option_c = $this->input->post('option_c');
 					$this->option_d = $this->input->post('option_d');
 					$this->option_e = $this->input->post('option_e');
-					// Kosongkan field gambar
-					$this->option_a_image = null;
-					$this->option_b_image = null;
-					$this->option_c_image = null;
-					$this->option_d_image = null;
-					$this->option_e_image = null;
 				} else {
+					
 					// Jika tipe opsi adalah gambar, gunakan path dari hidden input
-					$this->option_a_image = $this->input->post('option_a_image') ?: null;
-					$this->option_b_image = $this->input->post('option_b_image') ?: null;
-					$this->option_c_image = $this->input->post('option_c_image') ?: null;
-					$this->option_d_image = $this->input->post('option_d_image') ?: null;
-					$this->option_e_image = $this->input->post('option_e_image') ?: null;
-					// Kosongkan field teks
-					$this->option_a = null;
-					$this->option_b = null;
-					$this->option_c = null;
-					$this->option_d = null;
-					$this->option_e = null;
+					$this->option_a = $this->input->post('option_a_image') ?: null;
+					$this->option_b = $this->input->post('option_b_image') ?: null;
+					$this->option_c = $this->input->post('option_c_image') ?: null;
+					$this->option_d = $this->input->post('option_d_image') ?: null;
+					$this->option_e = $this->input->post('option_e_image') ?: null;
 				}
 
 				// Set jawaban benar untuk soal pilihan ganda
