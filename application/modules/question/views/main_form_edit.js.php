@@ -317,7 +317,7 @@
 			var formData = new FormData(document.getElementById(_form));
 
 			$.ajax({
-				url: '<?php echo base_url("question/ajax_save") ?>',
+				url: '<?php echo base_url("question/ajax_save/") ?>'+_key,
 				type: 'POST',
 				data: formData,
 				processData: false,

@@ -229,24 +229,21 @@ class Question extends AppBackend
             ];
             
             foreach ($option_fields as $field => $key) {
-                // Hanya upload jika ada file baru di $_FILES
-                if (!empty($_FILES[$field]['name'])) {
-                    $upload = $this->QuestionModel->handleImageUpload($field, $key, 'questions');
-                    if ($upload['status']) {
-                        // Update the post data to use the uploaded image path
-                        $_POST[$key] = $upload['data']->base_path;
-                    } else {
+                // Gunakan method handleImageUpload yang konsisten untuk semua upload
+                $upload = $this->QuestionModel->handleImageUpload($field, $key, 'questions');
+                
+                if (!$upload['status']) {
+                    // Hanya kembalikan error jika upload gagal karena masalah teknis, bukan karena tidak ada file
+                    if ($upload['data'] !== 'No file uploaded.') {
                         echo json_encode(['status' => false, 'data' => $upload['data']]);
                         return;
                     }
-                } else {
-                    // Jika tidak ada file baru diupload, gunakan path yang ada di hidden input
+                    // Jika tidak ada file baru diupload, gunakan path yang ada di hidden input atau kosongkan
                     $existingPath = $this->input->post($key);
-                    if ($existingPath) {
-                        $_POST[$key] = $existingPath;
-                    } else {
-                        $_POST[$key] = null;
-                    }
+                    $_POST[$key] = $existingPath ? $existingPath : null;
+                } else {
+                    // Jika upload berhasil, gunakan path hasil upload
+                    $_POST[$key] = $upload['data']->base_path;
                 }
             }
 

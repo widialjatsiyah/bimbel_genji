@@ -428,16 +428,19 @@ class QuestionModel extends CI_Model
 	{
 		$response = array('status' => false, 'data' => 'No operation.');
 		try {
+			// Ambil data soal sebelum diupdate untuk mendapatkan informasi gambar lama
+			$current_data = $this->getById($id);
+			
 			$this->subject_id = $this->input->post('subject_id');
-			$this->chapter_id = $this->input->post('chapter_id') ?: null;
-			$this->topic_id = $this->input->post('topic_id') ?: null;
-			$this->group_id = $this->input->post('group_id') ?: null;
-			$this->group_order = $this->input->post('group_order') ?: 1;
-			$this->is_group_main = $this->input->post('is_group_main') ? 1 : 0;
+			$this->chapter_id = $this->input->post('chapter_id');
+			$this->topic_id = $this->input->post('topic_id');
+			$this->question_text = $this->input->post('question_text');
 			$this->difficulty = $this->input->post('difficulty');
 			$this->curriculum = $this->input->post('curriculum');
 			$this->question_type = $this->input->post('question_type') ?: 'multiple_choice';
-			$this->question_text = $this->input->post('question_text');
+			$this->group_id = $this->input->post('group_id') ?: null;
+			$this->group_order = $this->input->post('group_order') ?: null;
+			$this->is_group_main = $this->input->post('is_group_main') ?: 0;
 			
 			// Tambahkan tipe opsi
 			$this->option_type = $this->input->post('option_type') ?: 'text';
@@ -446,6 +449,11 @@ class QuestionModel extends CI_Model
 			// Untuk soal esai, pilihan jawaban opsional
 			if ($this->question_type === 'multiple_choice') {
 				if($type_option === 'text') {
+					// Jika tipe opsi berubah dari gambar ke teks, hapus file gambar yang lama
+					if ($current_data && $current_data->option_type === 'image') {
+						$this->deleteOldOptionImages($current_data);
+					}
+					
 					$this->option_a = $this->input->post('option_a');
 					$this->option_b = $this->input->post('option_b');
 					$this->option_c = $this->input->post('option_c');
@@ -463,6 +471,11 @@ class QuestionModel extends CI_Model
 				$this->correct_option = $this->input->post('correct_option');
 
 			} else {
+				// Jika jenis soal berubah dari multiple_choice ke essay, hapus semua gambar opsi
+				if ($current_data && $current_data->question_type === 'multiple_choice') {
+					$this->deleteOldOptionImages($current_data);
+				}
+				
 				// Untuk soal esai, set opsi menjadi kosong jika tidak disediakan
 				$this->option_a = $this->input->post('option_a') ?: '';
 				$this->option_b = $this->input->post('option_b') ?: '';
@@ -504,6 +517,35 @@ class QuestionModel extends CI_Model
 			$response = array('status' => false, 'data' => 'Gagal memperbarui data: ' . $th->getMessage());
 		}
 		return $response;
+	}
+
+	// Method untuk menghapus gambar opsi lama
+	private function deleteOldOptionImages($current_data) {
+		$option_fields = [
+			$current_data->option_a,
+			$current_data->option_b, 
+			$current_data->option_c,
+			$current_data->option_d,
+			$current_data->option_e
+		];
+		
+		foreach ($option_fields as $image_path) {
+			if ($image_path && file_exists(FCPATH . $image_path)) {
+				// Cek apakah file ini benar-benar merupakan file gambar
+				$pathInfo = pathinfo($image_path);
+				$allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+				
+				if (in_array(strtolower($pathInfo['extension']), $allowedExtensions)) {
+					unlink(FCPATH . $image_path);
+					
+					// Hapus juga thumbnail jika ada
+					$thumbPath = $pathInfo['dirname'] . '/' . $pathInfo['filename'] . '_thumb.' . $pathInfo['extension'];
+					if (file_exists(FCPATH . $thumbPath)) {
+						unlink(FCPATH . $thumbPath);
+					}
+				}
+			}
+		}
 	}
 
 	public function delete($id)
