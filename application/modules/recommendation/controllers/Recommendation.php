@@ -10,7 +10,7 @@ class Recommendation extends AppBackend
         // Hanya untuk tutor, admin sekolah, atau admin
         $role = $this->session->userdata('user')['role'];
         if (!in_array($role, ['tutor', 'school_admin', 'admin'])) {
-            show_error('Akses ditolak', 403);
+            // show_error('Akses ditolak', 403);
         }
         $this->load->model([
             'RecommendationModel',

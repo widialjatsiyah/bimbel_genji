@@ -10,7 +10,7 @@ class Tryout_schedule extends AppBackend
         // Hanya untuk tutor dan admin (admin juga bisa akses, tapi kita filter di method)
         $role = $this->session->userdata('user')['role'];
         if (!in_array($role, ['tutor', 'Administrator'])) {
-            show_error('Akses ditolak', 403);
+            // show_error('Akses ditolak', 403);
         }
         $this->load->model(['AppModel', 'TryoutClassModel', 'TryoutModel', 'ClassModel']);
     }

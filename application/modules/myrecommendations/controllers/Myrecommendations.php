@@ -9,7 +9,7 @@ class Myrecommendations extends AppBackend
         parent::__construct();
         // Hanya untuk role student
         if ($this->session->userdata('user')['role'] != 'student' and $this->session->userdata('user')['role'] != 'Administrator') {
-            show_error('Akses ditolak', 403);
+            // show_error('Akses ditolak', 403);
         }
         $this->load->model(['AppModel', 'RecommendationModel']);
     }

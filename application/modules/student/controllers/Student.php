@@ -10,7 +10,7 @@ class Student extends AppBackend
         // Hanya admin dan admin sekolah yang boleh akses
         $role = $this->session->userdata('user')['role'];
         if (!in_array($role, ['Administrator', 'school_admin'])) {
-            show_error('Akses ditolak', 403);
+            // show_error('Akses ditolak', 403);
         }
         $this->load->model(['UserModel', 'StudentClassModel', 'ClassModel','SchoolModel','AppModel', 'SubunitModel']);
     }

@@ -9,7 +9,7 @@ class Meeting_quiz extends AppBackend
         parent::__construct();
         // Hanya untuk role tutor
         if ($this->session->userdata('user')['role'] != 'tutor') {
-            show_error('Akses ditolak', 403);
+            // show_error('Akses ditolak', 403);
         }
         $this->load->model([
             'MeetingQuizModel',

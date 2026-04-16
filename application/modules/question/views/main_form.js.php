@@ -256,21 +256,17 @@
         // Handle change of option type
         $('.question-option_type').on('change', function() {
             var optionType = $(this).val();
-
+            
             if (optionType === 'text') {
-                // Tampilkan input teks, sembunyikan input gambar
-                $('.option-text-container').show();
-                $('.option-image-container').hide();
-                // Set required untuk input teks
-                $('.option-text-container input[type="text"]').prop('required', true);
-                $('.option-image-container input[type="file"]').prop('required', false);
+                // Sembunyikan input file gambar dan tampilkan input teks
+                $('.row[id*="option-"]').find('.col-md-6:last-child').hide(); // Sembunyikan kolom gambar
+                $('.row[id*="option-"]').find('.col-md-6:first-child').show(); // Tampilkan kolom teks
+                $('.row[id*="option-"]').find('.col-md-6:first-child input').prop('required', true); // Wajibkan teks
             } else if (optionType === 'image') {
-                // Tampilkan input gambar, sembunyikan input teks
-                $('.option-text-container').hide();
-                $('.option-image-container').show();
-                // Set required untuk input file
-                $('.option-text-container input[type="text"]').prop('required', false);
-                $('.option-image-container input[type="file"]').prop('required', true);
+                // Sembunyikan input teks dan tampilkan input file gambar
+                $('.row[id*="option-"]').find('.col-md-6:first-child').hide(); // Sembunyikan kolom teks
+                $('.row[id*="option-"]').find('.col-md-6:last-child').show(); // Tampilkan kolom gambar
+                $('.row[id*="option-"]').find('.col-md-6:first-child input').prop('required', false); // Hilangkan wajib teks
             }
         });
 

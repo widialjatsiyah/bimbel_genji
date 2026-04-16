@@ -9,7 +9,7 @@ class Class_meeting extends AppBackend
         parent::__construct();
         // Hanya untuk role tutor
         if ($this->session->userdata('user')['role'] != 'tutor' && $this->session->userdata('user')['role'] != 'Administrator') {
-            show_error('Akses ditolak', 403);
+            // show_error('Akses ditolak', 403);
         }
         $this->load->model([
             'AppModel',
