@@ -21,9 +21,9 @@ class UserAnswerModel extends CI_Model
             ->row();
 
         if ($existing) {
-            $this->db->where('id', $existing->id)->update($this->_table, $data);
+            return $this->db->where('id', $existing->id)->update($this->_table, $data);
         } else {
-            $this->db->insert($this->_table, $data);
+            return $this->db->insert($this->_table, $data);
         }
     }
 

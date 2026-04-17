@@ -251,6 +251,11 @@ class User_tryout extends AppBackend
 
 		// Simpan jawaban
 		$result = $this->UserAnswerModel->saveAnswer($user_tryout_id, $question_id, $answer, $is_unsure);
+		if($result) {
+			$result = ['status' => true, 'message' => 'Jawaban disimpan'];
+		} else {
+			$result = ['status' => false, 'message' => 'Gagal menyimpan jawaban'];
+		}
 		echo json_encode($result);
 	}
 

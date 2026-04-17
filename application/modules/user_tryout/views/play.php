@@ -323,7 +323,7 @@
 	<input type="hidden" id="time_per_question" value="<?= $session->time_per_question ?? 0 ?>">
 
 	<!-- Container untuk notifikasi -->
-	<div id="notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
+	<div id="notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999; background-color: #f8f9fa; border: 1px solid #dee2e6; box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);"></div>
 
 	<!-- Bootstrap JS -->
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -352,6 +352,42 @@
 			// Debug: Tampilkan jumlah soal di console
 			// console.log("Jumlah soal:", totalQuestions);
 			// console.log("Data soal:", questions);
+
+			function updateGrid() {
+				var gridHtml = '';
+				for (var i = 0; i < totalQuestions; i++) {
+					var qid = questions[i].question_id;
+					var statusClass = '';
+					
+					// Periksa apakah soal ini sudah dijawab
+					if (answerMap[qid]) {
+						var isUnsure = answerMap[qid].is_unsure == 1;
+						
+						if (isUnsure) {
+							statusClass = 'unsure';
+						} else if (questions[i].question_type === 'essay' && 
+							   answerMap[qid].hasOwnProperty('answer_text') && 
+							   answerMap[qid].answer_text && 
+							   answerMap[qid].answer_text.trim() !== '') {
+							// Soal essay dianggap dijawab jika jawaban tidak kosong
+							statusClass = 'answered';
+						} else if (questions[i].question_type === 'multiple_choice' && 
+							   answerMap[qid].hasOwnProperty('answer') && 
+							   answerMap[qid].answer) {
+							// Soal pilihan ganda dianggap dijawab jika jawaban dipilih
+							statusClass = 'answered';
+						} else {
+							statusClass = 'skipped';
+						}
+					} else {
+						statusClass = 'skipped';
+					}
+					
+					var currentClass = (i === currentIndex) ? 'current' : '';
+					gridHtml += `<div class="question-grid-item ${statusClass} ${currentClass}" data-index="${i}">${i+1}</div>`;
+				}
+				$('#question-grid').html(gridHtml);
+			}
 
 			// Inisialisasi tampilan
 			function renderQuestion(index) {
@@ -415,8 +451,8 @@
 						// Skip if no content
 						if (!optContent) continue;
 
-						var checked = (answerMap[questions[currentIndex].question_id] && answerMap[questions[currentIndex].question_id].answer === letter) ? 'checked' : '';
-						var isSelected = (answerMap[questions[currentIndex].question_id] && answerMap[questions[currentIndex].question_id].answer === letter) ? 'selected' : '';
+						var checked = (answerMap[questions[currentIndex].question_id] && answerMap[questions[currentIndex].question_id].hasOwnProperty('answer') && answerMap[questions[currentIndex].question_id].answer === letter) ? 'checked' : '';
+						var isSelected = (answerMap[questions[currentIndex].question_id] && answerMap[questions[currentIndex].question_id].hasOwnProperty('answer') && answerMap[questions[currentIndex].question_id].answer === letter) ? 'selected' : '';
 						// console.log('Option ' + letter + ':', optContent, 'Type:', optType, 'Checked:', checked);
 						var optionContent = '';
 						if (optType === 'image') {
@@ -437,7 +473,7 @@
 					var userEssayAnswer = '';
 					if(answerMap[questions[currentIndex].question_id] && 
 					   answerMap[questions[currentIndex].question_id].hasOwnProperty('answer_text')) {
-						userEssayAnswer = answerMap[questions[currentIndex].question_id].answer_text;
+						userEssayAnswer = answerMap[questions[currentIndex].question_id].answer_text || '';
 					}
 					
 					optionsHtml += `
@@ -448,7 +484,7 @@
 								class="form-control essay-answer-textarea" 
 								rows="6" 
 								placeholder="Tulis jawaban esai Anda di sini...">${userEssayAnswer}</textarea>
-							<button class="btn btn-primary save-essay-btn mt-2" data-question-id="${questions[currentIndex].question_id}">Simpan Jawaban</button>
+						
 						</div>
 					`;
 				}
@@ -482,11 +518,12 @@
 				}
 			}
 
-			// Add event handler for essay answers
-			$(document).on('input propertychange', '[id^="essay-answer-"]', function() {
+			// Event handler untuk textarea essay - autosave saat user mengetik
+			$(document).on('input propertychange paste', '[id^="essay-answer-"]', function() {
 				var questionId = $(this).attr('id').replace('essay-answer-', '');
 				var answerText = $(this).val();
 				
+				// Kirim jawaban ke server
 				$.ajax({
 					url: '<?= base_url("user_tryout/ajax_save_essay_answer") ?>',
 					method: 'POST',
@@ -503,77 +540,16 @@
 							if (!answerMap[questionId]) answerMap[questionId] = {};
 							answerMap[questionId].answer_text = answerText;
 							answerMap[questionId].is_unsure = $('#btn-unsure').hasClass('active') ? 1 : 0;
+							
+							// Update grid untuk menunjukkan bahwa soal ini sudah dijawab
 							updateGrid();
 						}
 					},
 					error: function() {
-						// Jangan tampilkan error karena ini hanya autosave
+						// Tidak menampilkan error karena ini hanya autosave
 					}
 				});
 			});
-
-			// Add event handler for essay save button
-			$(document).on('click', '.save-essay-btn', function() {
-				var questionId = $(this).data('question-id');
-				var answerText = $('#essay-answer-' + questionId).val();
-				
-				$.ajax({
-					url: '<?= base_url("user_tryout/ajax_save_essay_answer") ?>',
-					method: 'POST',
-					data: {
-						user_tryout_id: userTryoutId,
-						question_id: questionId,
-						answer_text: answerText,
-						is_unsure: $('#btn-unsure').hasClass('active') ? 1 : 0
-					},
-					success: function(res) {
-						var res = JSON.parse(res);
-						if (res.status) {
-							// Update answerMap
-							if (!answerMap[questionId]) answerMap[questionId] = {};
-							answerMap[questionId].answer_text = answerText;
-							answerMap[questionId].is_unsure = $('#btn-unsure').hasClass('active') ? 1 : 0;
-							updateGrid();
-							showNotification('Jawaban esai disimpan!', 'success');
-						} else {
-							showNotification('Gagal menyimpan jawaban esai!', 'removed');
-						}
-					},
-					error: function() {
-						showNotification('Gagal menyimpan jawaban esai!', 'removed');
-					}
-				});
-			});
-
-			function updateGrid() {
-				// console.log('updateGrid');
-				var gridHtml = '';
-				for (var i = 0; i < totalQuestions; i++) {
-					var qid = questions[i].question_id;
-					var statusClass = '';
-					if (answerMap[qid]) {
-						// Cek apakah status unsure diaktifkan
-						var isUnsure = answerMap[qid].is_unsure == 1;
-						
-						if (isUnsure) {
-							statusClass = 'unsure';
-						} else if (questions[i].question_type === 'essay' && answerMap[qid].hasOwnProperty('answer_text') && answerMap[qid].answer_text.trim() !== '') {
-							// Untuk soal essay, cek apakah jawaban sudah diisi
-							statusClass = 'answered';
-						} else if (questions[i].question_type !== 'essay' && answerMap[qid].answer) {
-							// Untuk soal pilihan ganda, cek apakah jawaban sudah dipilih
-							statusClass = 'answered';
-						} else {
-							statusClass = 'skipped';
-						}
-					} else {
-						statusClass = 'skipped';
-					}
-					var currentClass = (i === currentIndex) ? 'current' : '';
-					gridHtml += `<div class="question-grid-item ${statusClass} ${currentClass}" data-index="${i}">${i+1}</div>`;
-				}
-				$('#question-grid').html(gridHtml);
-			}
 
 			// Event klik option - gunakan event delegation karena elemen dibuat secara dinamis
 			$(document).on('click', '.option-item', function() {
@@ -598,6 +574,8 @@
 						is_unsure: $('#btn-unsure').hasClass('active') ? 1 : 0
 					},
 					success: function(res) {
+						var res = JSON.parse(res);
+						console.log(res.status);
 						if (res.status) {
 							// Update answerMap
 							if (!answerMap[qid]) answerMap[qid] = {};
@@ -658,6 +636,7 @@
 					$('#btn-next').text('Selanjutnya');
 				}
 
+				// Panggil updateGrid untuk memperbarui status soal
 				updateGrid();
 			});
 
@@ -677,6 +656,8 @@
 				if (currentIndex === 0) {
 					$('#btn-prev').prop('disabled', true);
 				}
+				
+				// Panggil updateGrid untuk memperbarui status soal
 				updateGrid();
 			});
 
@@ -694,6 +675,9 @@
 					renderQuestion(currentIndex);
 					$('#btn-prev').prop('disabled', currentIndex === 0);
 					$('#btn-next').text(currentIndex === totalQuestions - 1 ? 'Selesai' : 'Selanjutnya');
+					
+					// Panggil updateGrid untuk memperbarui status soal
+					updateGrid();
 				}
 			});
 

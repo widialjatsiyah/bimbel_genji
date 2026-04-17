@@ -13,7 +13,8 @@
             margin-bottom: 40px;
         }
         .score-box {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            /* background: linear-gradient(135deg, #0066cc, #ff9933); */
+			background-color: #ff9933 ;
             color: white;
             border-radius: 10px;
             padding: 30px;
@@ -67,7 +68,7 @@
                     <h3 class="text-center text-muted mb-4"><?= $session->name ?></h3>
                     
                     <div class="score-box">
-                        <h4>Skor Akhir Anda</h4>
+                        <h4 class="text-light">Skor Akhir Anda</h4>
                         <div class="score-value"><?= $user_tryout->total_score ?></div>
                         <p>Total dari <?= $session->question_count ?> soal</p>
                     </div>
@@ -150,7 +151,7 @@
             <div class="w-100 mt-3">
 
                 <p class="text-success fw-bold">
-                    🎉 Selamat! Anda telah menyelesaikan semua sesi.
+                     Selamat! Anda telah menyelesaikan semua sesi.
                 </p>
 
             </div>
