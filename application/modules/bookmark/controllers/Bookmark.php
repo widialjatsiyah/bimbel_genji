@@ -60,6 +60,9 @@ class Bookmark extends AppBackend
 					'type' => 'inner'
 				],
 			],
+			'static_conditional_spec'=> [
+				'bookmarks.user_id' => $this->session->userdata('user')['id']
+			],
 			'order_column' => 1,
 			'order_column_dir' => 'asc',
 		);
