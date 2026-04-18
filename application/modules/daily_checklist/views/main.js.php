@@ -10,6 +10,8 @@
                 type: 'post',
                 data: $('#form-checklist').serialize(),
                 success: function(response) {
+					// console.log(response);
+					response = $.parseJSON(response);
                     if (response.status) {
                         notify(response.data, 'success');
                         loadHistory();
