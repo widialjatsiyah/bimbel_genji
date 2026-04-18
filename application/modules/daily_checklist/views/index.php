@@ -60,12 +60,19 @@
 
                                 <div class="form-group">
                                     <label>Mood Hari Ini (1-10)</label>
-                                    <select name="mood_rating" class="form-control">
-                                        <option value="">Pilih</option>
-                                        <?php for ($i=1; $i<=10; $i++): ?>
-                                        <option value="<?= $i ?>" <?= isset($today_data) && $today_data->mood_rating == $i ? 'selected' : '' ?>><?= $i ?></option>
-                                        <?php endfor; ?>
-                                    </select>
+                                    <div class="rating-container">
+                                        <select name="mood_rating" class="form-control" id="mood-rating-select" style="display: none;">
+                                            <option value="">Pilih Mood</option>
+                                            <?php for ($i=1; $i<=10; $i++): ?>
+                                            <option  value="<?= $i ?>" <?= isset($today_data) && $today_data->mood_rating == $i ? 'selected' : '' ?>><?= $i ?></option>
+                                            <?php endfor; ?>
+                                        </select>
+                                        <div class="star-rating" id="star-rating-display">
+                                            <?php for ($i=1; $i<=10; $i++): ?>
+                                                <span class="star <?= isset($today_data) && $today_data->mood_rating >= $i ? 'rated' : '' ?>" data-value="<?=$i?>">&#9733;</span>
+                                            <?php endfor; ?>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div class="form-group">
@@ -93,3 +100,51 @@
         </div>
     </div>
 </section>
+
+<style>
+.rating-container {
+    position: relative;
+}
+
+#star-rating-display {
+    margin-top: 5px;
+    display: flex;
+}
+
+.star {
+    font-size: 24px;
+    color: #ddd;
+    cursor: pointer;
+    transition: color 0.2s;
+    padding-right: 4px;
+    flex: 1;
+    max-width: 24px;
+}
+
+.star:hover,
+.star.rated {
+    color: #ffc107;
+}
+
+.star.rated:hover {
+    color: #e0a800;
+}
+
+/* Mood level colors */
+.mood-excellent { color: #28a745; font-weight: bold; }
+.mood-good { color: #20c997; font-weight: bold; }
+.mood-average { color: #ffc107; font-weight: bold; }
+.mood-below-average { color: #fd7e14; font-weight: bold; }
+.mood-poor { color: #dc3545; font-weight: bold; }
+
+/* Table styling */
+.table td {
+    vertical-align: middle;
+}
+
+/* Rating container in table */
+.rating-in-table {
+    display: flex;
+    justify-content: center;
+}
+</style>
