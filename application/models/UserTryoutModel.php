@@ -454,4 +454,53 @@ class UserTryoutModel extends CI_Model
 	{
 		return $this->db->field_exists($column, $table);
 	}
-}	
+	
+	/**
+     * Check if session has expired based on start time and duration
+     */
+    public function isSessionExpired($user_tryout_id)
+    {
+        $this->load->model('TryoutSessionModel');
+        
+        // Ambil data user_tryout
+        $user_tryout = $this->getDetail(['id' => $user_tryout_id]);
+        if (!$user_tryout || $user_tryout->status !== 'in_progress') {
+            return false;
+        }
+
+        // Ambil session dari user_tryout
+        $session = $this->TryoutSessionModel->getDetail(['id' => $user_tryout->tryout_session_id]);
+        if (!$session) {
+            return false;
+        }
+
+        // Hitung durasi sesi dalam detik
+        $duration_seconds = $session->duration_minutes * 60;
+
+        // Hitung waktu mulai sesi
+        $start_time = strtotime($user_tryout->start_time);
+
+        // Hitung waktu sekarang
+        $current_time = time();
+
+        // Cek apakah waktu telah habis
+        if ($current_time > $start_time + $duration_seconds) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Complete session when time has expired
+     */
+    public function completeExpiredSession($user_tryout_id)
+    {
+        // Update status menjadi completed
+        $this->db->where('id', $user_tryout_id)->update($this->_table, [
+            'end_time' => date('Y-m-d H:i:s'),
+            'status' => 'completed',
+            'total_score' => 0 // Skor nol jika waktu habis
+        ]);
+    }
+}

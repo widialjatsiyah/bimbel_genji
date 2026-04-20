@@ -121,6 +121,35 @@ class Tryout_list extends AppBackend
             return;
         }
         
+        // Cek apakah user sudah memiliki sesi aktif
+        $active_tryout = null;
+        if ($this->UserTryoutModel->columnExists('tryout_session_id', 'user_tryouts')) {
+            // Cek apakah user sedang mengerjakan sesi ini
+            $active_tryout = $this->UserTryoutModel->getActiveUserTryoutBySession($user_id, $first_session->id);
+        } else {
+            // Cek apakah user sedang mengerjakan tryout ini (tanpa session)
+            $active_tryout = $this->UserTryoutModel->getActiveUserTryout($user_id, $tryout_id);
+        }
+        
+        // Jika ada sesi aktif, cek apakah telah kadaluarsa
+        if ($active_tryout && $active_tryout->status === 'in_progress') {
+            if ($this->UserTryoutModel->isSessionExpired($active_tryout->id)) {
+                // Selesaikan sesi jika telah kadaluarsa
+                $this->UserTryoutModel->completeExpiredSession($active_tryout->id);
+                
+                // Tampilkan pesan bahwa waktu telah habis
+                $this->session->set_flashdata('error', 'Waktu pengerjaan sebelumnya telah habis. Silakan mulai kembali.');
+                
+                // Redirect ke halaman hasil atau kembali ke daftar tryout
+                redirect('tryout_list');
+                return;
+            }
+            
+            // Jika sesi aktif belum kadaluarsa, lanjutkan ke sesi tersebut
+            redirect('user_tryout/resume/' . $active_tryout->id);
+            return;
+        }
+        
         // Mulai sesi pertama
         // Gunakan fungsi yang kompatibel dengan struktur database saat ini
         if ($this->UserTryoutModel->columnExists('tryout_session_id', 'user_tryouts')) {

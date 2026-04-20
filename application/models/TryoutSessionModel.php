@@ -43,11 +43,11 @@ class TryoutSessionModel extends CI_Model
 				'label' => 'Metode Perhitungan Skor',
 				'rules' => 'required|in_list[correct_incorrect,points_per_question]'
 			],
-			[
-				'field' => 'enable_time_per_question',
-				'label' => 'Aktifkan Waktu Per Soal',
-				'rules' => 'required|in_list[0,1]'
-			],
+			// [
+			// 	'field' => 'enable_time_per_question',
+			// 	'label' => 'Aktifkan Waktu Per Soal',
+			// 	'rules' => 'required|in_list[0,1]'
+			// ],
 			[
 				'field' => 'time_per_question',
 				'label' => 'Waktu Per Soal (detik)',

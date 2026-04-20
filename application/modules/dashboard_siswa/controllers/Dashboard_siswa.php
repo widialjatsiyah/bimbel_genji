@@ -54,7 +54,7 @@ class Dashboard_siswa extends AppBackend
         $data['tryouts'] = $this->UserTryoutModel->getHistoryByUser($user_id);
       $data = [
 			'app' => $this->app(),
-			'main_js' => $this->load_main_js('dashboard_siswa_history'),
+			'main_js' => $this->load_main_js('dashboard_siswa'),
 			'card_title' => 'Riwayat Try Out',
 			'tryouts' => $data['tryouts']
 		];
