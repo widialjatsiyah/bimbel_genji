@@ -152,6 +152,22 @@ class UserTryoutModel extends CI_Model
 		}
 	}
 
+    // Fungsi untuk mendapatkan user tryout yang telah selesai berdasarkan sesi
+    public function getCompletedUserTryoutBySession($user_id, $session_id)
+    {
+        // Cek apakah kolom tryout_session_id ada di tabel
+        if ($this->columnExists('tryout_session_id', $this->_table)) {
+            return $this->db->where('user_id', $user_id)
+                ->where('tryout_session_id', $session_id)  // Menggunakan tryout_session_id jika kolom tersedia
+                ->where('status', 'completed')  // Statusnya completed
+                ->get($this->_table)
+                ->row();
+        } else {
+            // Jika kolom tidak ada, kembalikan null karena tidak bisa mencocokkan dengan sesi
+            return null;
+        }
+    }
+
 	public function startTryoutWithSession($user_id, $session_id)
 	{
 		// Cek apakah kolom tryout_session_id ada di tabel

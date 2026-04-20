@@ -15,7 +15,8 @@ class Tryout_list extends AppBackend
             'TryoutSessionModel', 
             'TryoutClassModel', 
             'StudentClassModel',
-            'UserTryoutModel'
+            'UserTryoutModel',
+            'TryoutQuestionModel'
         ]);
     }
 
@@ -28,21 +29,66 @@ class Tryout_list extends AppBackend
         foreach ($tryouts as $tryout) {
             $tryout->sessions = $this->TryoutSessionModel->getByTryout($tryout->id);
             
+            // Hitung jumlah soal total untuk tryout ini
+            $total_questions = 0;
+            foreach ($tryout->sessions as $session) {
+                $session_questions = $this->TryoutQuestionModel->getQuestionsBySession($session->id);
+                $total_questions += count($session_questions);
+            }
+            $tryout->total_questions = $total_questions;
+            
+            // Hitung durasi total
+            $total_duration = 0;
+            foreach ($tryout->sessions as $session) {
+                $total_duration += $session->duration_minutes;
+            }
+            $tryout->total_duration = $total_duration;
+            
+            // Tambahkan jumlah total sesi
+            $tryout->total_sessions = count($tryout->sessions);
+            
+            // Periksa apakah tryout gratis
+            $tryout->is_free = isset($tryout->is_free) ? $tryout->is_free : 0;
+            
             // Periksa apakah user sudah mengerjakan sesi apa pun dari tryout ini
             $tryout->completed_sessions = 0;
             foreach ($tryout->sessions as $session) {
                 // Gunakan fungsi yang kompatibel dengan struktur database saat ini
                 if ($this->UserTryoutModel->columnExists('tryout_session_id', 'user_tryouts')) {
-                    $user_tryout = $this->UserTryoutModel->getActiveUserTryoutBySession($user_id, $session->id);
+                    // Cek apakah sesi ini sudah selesai dikerjakan
+                    $completed_tryout = $this->UserTryoutModel->getCompletedUserTryoutBySession($user_id, $session->id);
+                    
+                    if ($completed_tryout) {
+                        $tryout->completed_sessions++;
+                    }
+                    // Sesi aktif tidak boleh dihitung sebagai sesi yang telah selesai
+                    // Jadi kami menghapus bagian pengecekan aktif di sini
+                    
                 } else {
                     // Jika kolom tidak ada, lewati pengecekan ini
                     $user_tryout = null;
                 }
-                
-                if ($user_tryout && $user_tryout->status === 'completed') {
-                    $tryout->completed_sessions++;
-                }
             }
+        }
+
+        // Hitung jumlah soal dan durasi total hanya sekali
+        foreach ($tryouts as $tryout) {
+            $total_questions = 0;
+            $total_duration = 0;
+            
+            foreach ($tryout->sessions as $session) {
+                // Hitung jumlah soal
+                $session_questions = $this->TryoutQuestionModel->getQuestionsBySession($session->id);
+                $total_questions += count($session_questions);
+                
+                // Hitung durasi
+                $total_duration += $session->duration_minutes;
+            }
+            
+            $tryout->total_questions = $total_questions;
+            $tryout->total_duration = $total_duration;
+            $tryout->total_sessions = count($tryout->sessions);
+            $tryout->is_free = isset($tryout->is_free) ? $tryout->is_free : 0;
         }
 
         $data = [
@@ -50,6 +96,7 @@ class Tryout_list extends AppBackend
             'card_title' => 'Daftar Try Out',
             'tryouts' => $tryouts
         ];
+        
         $this->template->set('title', 'Daftar Try Out | ' . $data['app']->app_name, TRUE);
         $this->template->load_view('index', $data, TRUE);
         $this->template->render();

@@ -1,101 +1,94 @@
-                    <?php endforeach; ?>
-                    <?php endif; ?>
-                </select>
-                <i class="form-group__bar"></i>
-            </div>
-        </div>
-    </div>
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title"><?= $card_title ?></h4>
+                
+                <form id="form-question-group" autocomplete="off">
+                    <!-- CSRF -->
+                    <input type="hidden" name="<?php echo $this->security->get_csrf_token_name(); ?>" value="<?php echo $this->security->get_csrf_hash(); ?>" />
+                    <input type="hidden" name="group_id" value="<?php echo isset($group_data['group_data']['group_id']) ? $group_data['group_data']['group_id'] : '' ?>" />
 
-    <div class="form-actions">
-        <button type="button" class="btn btn-success btn--icon-text question-group-action-save">
-            <i class="zmdi zmdi-save"></i> Simpan Grup
-        </button>
-        <a href="<?= base_url('question_group') ?>" class="btn btn-light btn--icon-text">
-            Batal
-        </a>
-    </div>
-</form>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label class="col-sm-12 control-label">Pilih Soal</label>
+                                <div class="col-sm-12">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h5>Soal Tersedia</h5>
+                                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                                <table id="table-available-questions" class="table table-striped table-bordered">
+                                                    <thead class="sticky-top">
+                                                        <tr>
+                                                            <th width="50">No</th>
+                                                            <th>Soal</th>
+                                                            <th width="100" class="text-center">#</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!-- Data akan diisi oleh JavaScript -->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h5>Soal Terpilih</h5>
+                                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                                <table id="table-selected-questions" class="table table-striped table-bordered">
+                                                    <thead class="sticky-top">
+                                                        <tr>
+                                                            <th width="50">No</th>
+                                                            <th>Soal</th>
+                                                            <th width="100" class="text-center">#</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!-- Data akan diisi oleh JavaScript -->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="main_question_id" class="col-sm-12 control-label">Soal Utama</label>
+                                <div class="col-sm-12">
+                                    <div class="form-group form-group--float form-group--active">
+                                        <select name="main_question_id" id="main_question_id" class="select2" style="width: 100%;">
+                                            <option value="">Pilih Soal Utama</option>
+                                            <!-- Options will be loaded via AJAX -->
+                                        </select>
+                                        <i class="form-group__bar"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions" style="margin-top: 20px;">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <button type="button" class="btn btn-success btn--icon-text question_group-action-save">
+                                    <i class="zmdi zmdi-save"></i> Simpan
+                                </button>
+                                <button type="button" class="btn btn-light btn--icon-text question_group-action-cancel">
+                                    Batal
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-$(document).ready(function() {
-    // Load all questions that are not in any group
-    if ($('.question-ids').length) {
-        $.ajax({
-            url: '<?= base_url('question_group/ajax_get_questions_not_in_group') ?>',
-            type: 'GET',
-            dataType: 'json',
-            success: function(response) {
-                var selectElement = $('.question-ids');
-                
-                $.each(response, function(index, question) {
-                    // Only add if not already selected
-                    if (!selectElement.find('option[value="' + question.id + '"]').length) {
-                        var option = $('<option value="' + question.id + '">' + question.question_text.substring(0, 80) + (question.question_text.length > 80 ? '...' : '') + '</option>');
-                        selectElement.append(option);
-                    }
-                });
-                
-                // Reinitialize Select2
-                selectElement.trigger('change.select2');
-            }
-        });
-    }
-    
-    // Initialize Select2 for multi-select
-    $('.select2').select2();
-    
-    // Handle save
-    $(".question-group-action-save").on("click", function(e) {
-        e.preventDefault();
-        
-        var formData = {
-            group_id: $('input[name="group_id"]').val(),
-            main_question_id: $('select[name="main_question_id"]').val(),
-            question_ids: $('select[name="question_ids[]"]').val()
-        };
-        
-        $.ajax({
-            type: "post",
-            url: "<?= base_url('question_group/ajax_create_group') ?>",
-            data: formData,
-            success: function(response) {
-                var response = JSON.parse(response);
-                if (response.status === true) {
-                    notify(response.data, "success");
-                    // Redirect to question group list after successful save
-                    setTimeout(function() {
-                        window.location.href = "<?= base_url('question_group') ?>";
-                    }, 1000);
-                } else {
-                    notify(response.data, "danger");
-                }
-            },
-            error: function(xhr, status, error) {
-                console.log("Error: ", xhr.responseText);
-                notify("Terjadi kesalahan saat menyimpan data", "danger");
-            }
-        });
-    });
-});
-
-function notify(message, type) {
-    // Simple notification function
-    var alertDiv = $('<div class="alert alert-' + (type === 'success' ? 'success' : 'danger') + ' alert-dismissible fade show" role="alert">' +
-        message + 
-        '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
-        '<span aria-hidden="true">&times;</span>' +
-        '</button></div>');
-    
-    // Insert at top of body or form
-    $('#form-question-group').before(alertDiv);
-    
-    // Auto remove after 5 seconds
-    setTimeout(function() {
-        alertDiv.alert('close');
-    }, 5000);
-}
+    // Kirim data grup ke JavaScript jika sedang dalam mode edit
+    <?php if (isset($group_data) && $group_data): ?>
+    var groupData = <?php echo json_encode($group_data); ?>;
+    <?php endif; ?>
 </script>

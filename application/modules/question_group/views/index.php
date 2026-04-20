@@ -5,7 +5,7 @@
 
             <div class="table-action">
                 <div class="buttons">
-                    <a href="<?= base_url('question_group/form') ?>" class="btn btn--raised btn-primary btn--icon-text" target="_blank">
+                    <a href="<?= base_url('question_group/form') ?>" class="btn btn--raised btn-primary btn--icon-text">
                         <i class="zmdi zmdi-plus-circle"></i> Buat Grup Soal Baru
                     </a>
                 </div>

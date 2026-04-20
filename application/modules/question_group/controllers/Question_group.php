@@ -12,8 +12,7 @@ class Question_group extends AppBackend
     {
         parent::__construct();
         $this->load->model([
-            'QuestionModel',
-            'AppModel'
+            'QuestionModel'
         ]);
         $this->load->library('form_validation');
     }
@@ -25,7 +24,7 @@ class Question_group extends AppBackend
     {
         $data = [
             'app' => $this->app(),
-            'main_js' => $this->load_main_js('question_group'),
+            'main_js' => $this->load_main_js('question_group'), // Loads question_group.js.php
             'card_title' => 'Manajemen Grup Soal',
         ];
 
@@ -41,7 +40,7 @@ class Question_group extends AppBackend
     {
         $data = [
             'app' => $this->app(),
-            'main_js' => $this->load_main_js('question_group/form', true),
+            'main_js' => $this->load_main_js('question_group/views/main_form.js.php', true), // Loads question_group form js
             'card_title' => ($id) ? 'Ubah Grup Soal' : 'Tambah Grup Soal',
             'group_data' => null
         ];
@@ -51,7 +50,9 @@ class Question_group extends AppBackend
             // We'll treat the ID as the group ID and fetch related questions
             $questions = $this->QuestionModel->getByGroupId($id);
             $data['group_data'] = [
-                'group_id' => $id,
+                'group_data' => [
+                    'group_id' => $id
+                ],
                 'questions' => $questions,
                 'question_count' => count($questions)
             ];
@@ -70,7 +71,7 @@ class Question_group extends AppBackend
         $this->handle_ajax_request();
 
         // Get all unique group IDs from questions table
-        $this->db->select('DISTINCT group_id as id, COUNT(*) as question_count');
+        $this->db->select('group_id as id, COUNT(*) as question_count');
         $this->db->from('questions');
         $this->db->where('group_id IS NOT NULL');
         $this->db->group_by('group_id');
@@ -100,11 +101,11 @@ class Question_group extends AppBackend
     /**
      * Create a new question group
      */
-    public function ajax_create_group()
+    public function ajax_create_group($id = null)
     {
         $this->handle_ajax_request();
 
-        $group_id = $this->input->post('group_id');
+        $group_id = $id ? $id : $this->input->post('group_id');
         $question_ids = $this->input->post('question_ids');
         $main_question_id = $this->input->post('main_question_id');
 
@@ -115,7 +116,7 @@ class Question_group extends AppBackend
 
         // If no group_id is provided, generate a new one
         if (empty($group_id)) {
-            $group_id = $this->QuestionModel->createNewGroupId();
+            $group_id = $this->GroupQuestionModel->createNewGroupId();
         }
 
         $this->db->trans_start();
@@ -209,6 +210,22 @@ class Question_group extends AppBackend
         $this->handle_ajax_request();
         
         $questions = $this->QuestionModel->getNonGroupQuestions();
+        echo json_encode($questions);
+    }
+    
+    /**
+     * Get questions in a specific group
+     */
+    public function ajax_get_questions_in_group($group_id = null)
+    {
+        $this->handle_ajax_request();
+        
+        if (!$group_id) {
+            echo json_encode([]);
+            return;
+        }
+        
+        $questions = $this->QuestionModel->getByGroupId($group_id);
         echo json_encode($questions);
     }
 }

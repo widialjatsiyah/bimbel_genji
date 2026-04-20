@@ -130,7 +130,7 @@
 			<div class="login__block active" style="max-width: 400px;">
 				<div class="login__block__header">
 
-					<img src="<?= base_url('directory/settings/7f7ac8b44baa13fb617017560d17f87a.jpg') ?>" style="height:60px;border-radius: 25%;">
+					<img src="<?= base_url('directory/settings/7f7ac8b44baa13fb617017560d17f87a.jpg') ?>" style="height:60px;border-radius: 10%;">
 					<span style="font-weight: 500;">Generasi Jenius</span>
 				</div>
 

@@ -404,8 +404,18 @@
 
 				// Jika soal ini adalah soal utama dalam grup, tampilkan header grup dan konten soal
 				if (questionData.is_group_main && questionData.group_id !== null) {
+					// Temukan rentang nomor soal dalam grup
+					var groupQuestions = questions.filter(item => 
+						item.group_id === questionData.group_id
+					).sort((a, b) => a.group_order - b.group_order);
+					
+					// Temukan nomor urut soal dalam keseluruhan daftar soal
+					var mainQuestionIndex = questions.indexOf(questionData);
+					var startNumber = mainQuestionIndex + 1; // Nomor dimulai dari 1
+					var endNumber = startNumber + groupQuestions.length - 1;
+					
 					questionHtml += '<div>';
-					questionHtml += '<div class="alert alert-info"><strong>Soal Grup</strong> ' + questionData.question_text + '</div>';
+					questionHtml += '<div class="alert alert-info"><strong>Untuk soal nomor ' + startNumber + ' - ' + endNumber + '</strong><br/>' + questionData.question_text + '</div>';
 					
 					// Tambahkan gambar soal jika ada
 					if (questionData.question_image) {
@@ -415,8 +425,12 @@
 				} 
 				// Jika soal ini bagian dari grup tapi bukan utama
 				else if (questionData.group_id !== null && !questionData.is_group_main) {
+					// Temukan nomor urut soal ini dalam keseluruhan daftar soal
+					var questionIndex = questions.indexOf(questionData);
+					var number = questionIndex + 1;
+					
 					questionHtml += '<div class="question-group-member mb-3">';
-					questionHtml += '<div class="alert alert-light border"><strong>Soal Lanjutan:</strong> ' + questionData.question_text + '</div>';
+					questionHtml += '<div class="alert alert-light border"><strong>Soal (' + number + '):</strong> ' + questionData.question_text + '</div>';
 					
 					// Tambahkan gambar soal jika ada
 					if (questionData.question_image) {
