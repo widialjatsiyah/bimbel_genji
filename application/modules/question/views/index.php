@@ -8,10 +8,14 @@
                     <a href="<?= base_url('question/form') ?>" class="btn btn--raised btn-primary btn--icon-text">
                         <i class="zmdi zmdi-plus-circle"></i> Tambah Soal
                     </a>
+					 <button class="btn btn--raised btn-success btn--icon-text question-action-import" >
+                            <i class="zmdi zmdi-file-excel"></i>Import Excel
+                        </button>
                 </div>
             </div>
 
 
+            <?php include_once('import_form.php') ?>
             <div class="table-responsive">
                 <table id="table-question" class="table table-bordered">
                     <thead class="thead-default">

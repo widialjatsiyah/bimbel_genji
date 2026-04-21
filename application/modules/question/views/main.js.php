@@ -6,6 +6,9 @@
 		var _table = "table-question";
 		var _modal = "modal-form-question";
 		var _form = "form-question";
+		
+		// Define base_url for AJAX requests
+		var base_url = '<?php echo base_url(); ?>';
 
 		// Fungsi untuk menangani preview gambar
 		function previewImage(input, previewContainer) {
@@ -202,6 +205,131 @@
 			}
 		});
 
+		// Handle data add
+		$("#" + _section).on("click", "button." + _section + "-action-add", function(e) {
+			e.preventDefault();
+			resetForm();
+		});
+
+		// Handle data import button
+		$("#" + _section).on("click", "button." + _section + "-action-import", function(e) {
+			e.preventDefault();
+			// Open import modal
+			$('#modal-form-question-import').modal('show');
+		});
+
+		// Handle download template button
+		$("#" + _section).on("click", "button.question-import-download-template", function(e) {
+			e.preventDefault();
+			downloadTemplate();
+		});
+
+		// Function to download template
+		function downloadTemplate() {
+			window.location.href = base_url + 'question/download_template';
+		}
+
+		// Handle import button click
+		$(document).on('click', '.question-import-action-save', function() {
+			var subjectId = $('.question-import-subject_id').val();
+			var fileInput = $('.question-import-file')[0];
+			
+			if (!subjectId) {
+				showNotification('Silakan pilih mata pelajaran', 'warning');
+				return;
+			}
+			
+			if (!fileInput.files[0]) {
+				showNotification('Silakan pilih file Excel', 'warning');
+				return;
+			}
+			
+			var formData = new FormData($('#form-question-import')[0]);
+			
+			// Disable button during import
+			$('.question-import-action-save').prop('disabled', true).html('<i class="zmdi zmdi-spinner zmdi-hc-spin"></i> Mengimpor...');
+			
+			$.ajax({
+				url: base_url + 'question/import_from_excel',
+				method: 'POST',
+				data: formData,
+				processData: false,
+				contentType: false,
+				success: function(response) {
+					var res = JSON.parse(response);
+					
+					if (res.status) {
+						showNotification(res.data, 'success');
+						$('#modal-form-question-import').modal('hide');
+						// Reload the table
+						$('#' + _table).DataTable().ajax.reload(null, false);
+					} else {
+						showNotification(res.data, 'error');
+					}
+					
+					// Re-enable button
+					$('.question-import-action-save').prop('disabled', false).html('<i class="zmdi zmdi-upload"></i> Mulai Impor');
+				},
+				error: function(xhr, status, error) {
+					console.error('Import error:', error);
+					showNotification('Terjadi kesalahan saat mengimpor: ' + error, 'error');
+					
+					// Re-enable button
+					$('.question-import-action-save').prop('disabled', false).html('<i class="zmdi zmdi-upload"></i> Mulai Impor');
+				}
+			});
+		});
+
+		// Function to show notification
+		function showNotification(message, type) {
+			// Using standard Bootstrap alert
+			var alertClass = 'alert-';
+			switch(type) {
+				case 'success':
+					alertClass += 'success';
+					break;
+				case 'error':
+					alertClass += 'danger';
+					break;
+				case 'warning':
+					alertClass += 'warning';
+					break;
+				default:
+					alertClass += 'info';
+			}
+			
+			var alertHtml = '<div class="alert ' + alertClass + ' alert-dismissible fade show position-fixed" style="z-index: 9999; top: 20px; right: 20px;" role="alert">' +
+				message +
+				'<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+					'<span aria-hidden="true">&times;</span>' +
+				'</button>' +
+			'</div>';
+			
+			$('body').append(alertHtml);
+			
+			// Auto remove after 5 seconds
+			setTimeout(function() {
+				$('.alert').fadeOut('slow', function() {
+					$(this).remove();
+				});
+			}, 5000);
+		}
+
+		// Handle data edit
+		$("#" + _section).on("click", "button." + _section + "-action-edit", function(e) {
+			e.preventDefault();
+			var n = $(this).closest("tr").find('td:first').text() - 1;
+			var record = dt.rows(n).data()[0];
+
+			// Set current data
+			currentId = record.id;
+
+			// Load data to form
+			loadFormData(currentId);
+		});
+
+		// Initialize DataTable
+		
 		// Initialize DataTables
 		if ($("#" + _table)[0]) {
 			var table_question = $("#" + _table).DataTable({
@@ -378,153 +506,65 @@
 			});
 		};
 
-		// Chained dropdown: Subject -> Chapter
-		$('.question-subject_id').on('change', function() {
-			var subject_id = $(this).val();
-			var $chapter = $('.question-chapter_id');
-			var $topic = $('.question-topic_id');
 
-			// Reset chapter & topic
-			$chapter.empty().append('<option value=""></option>').trigger('change');
-			$topic.empty().append('<option value=""></option>').trigger('change');
-
-			if (subject_id) {
-				$.ajax({
-					url: '<?php echo base_url("question/ajax_get_chapters") ?>',
-					type: 'get',
-					data: {
-						subject_id: subject_id
-					},
-					dataType: 'json',
-					success: function(data) {
-						$.each(data, function(i, item) {
-							$chapter.append('<option value="' + item.id + '">' + item.name + '</option>');
-						});
-						$chapter.trigger('change');
-					}
-				});
-			}
+		$(".dataTables_filter input[type=search]").focus(function() {
+			$(this).closest(".dataTables_filter").addClass("dataTables_filter--toggled")
 		});
 
-		// Chained dropdown: Chapter -> Topic
-		$('.question-chapter_id').on('change', function() {
-			var chapter_id = $(this).val();
-			var $topic = $('.question-topic_id');
-
-			// Reset topic
-			$topic.empty().append('<option value=""></option>').trigger('change');
-
-			if (chapter_id) {
-				$.ajax({
-					url: '<?php echo base_url("question/ajax_get_topics") ?>',
-					type: 'get',
-					data: {
-						chapter_id: chapter_id
-					},
-					dataType: 'json',
-					success: function(data) {
-						$.each(data, function(i, item) {
-							$topic.append('<option value="' + item.id + '">' + item.name + '</option>');
-						});
-						$topic.trigger('change');
-					}
-				});
-			}
+		$(".dataTables_filter input[type=search]").blur(function() {
+			$(this).closest(".dataTables_filter").removeClass("dataTables_filter--toggled")
 		});
 
-		// Handle add
-		$("#" + _section).on("click", "button." + _section + "-action-add", function(e) {
+		$("body").on("click", "[data-table-action]", function(a) {
+			a.preventDefault();
+			var b = $(this).data("table-action");
+			if ("reload" === b) {
+				$("#" + _table).DataTable().ajax.reload(null, false);
+			};
+		});
+
+		// Handle data delete
+		$("#" + _table).on("click", "button." + _section + "-action-delete", function(e) {
 			e.preventDefault();
-			resetForm();
+			var n = $(this).closest("tr").find('td:first').text() - 1;
+			var record = dt.rows(n).data()[0];
+
+			confirmDelete(record.id, record.question_text);
 		});
 
-		// Handle edit - now we'll remove this since we're changing to direct link
-		// The edit functionality is now handled by clicking the direct link
-
-		// Handle save - we'll keep this in case there's still a modal implementation somewhere
-		$("#" + _modal + " ." + _section + "-action-save").on("click", function(e) {
-			e.preventDefault();
-
-			// Gunakan FormData untuk mengirim data dan file
-			var formData = new FormData($(`#${_form}`)[0]);
-
-			$.ajax({
-				type: "post",
-				url: "<?php echo base_url('question/ajax_save/') ?>" + _key,
-				data: formData,
-				processData: false,
-				contentType: false,
-				success: function(response) {
-					var response = JSON.parse(response);
-					if (response.status === true) {
-						resetForm();
-						$("#" + _modal).modal("hide");
-						$("#" + _table).DataTable().ajax.reload(null, false);
-						notify(response.data, "success");
-					} else {
-						notify(response.data, "danger");
-					};
-				},
-				error: function(xhr, status, error) {
-					console.log("Error: ", xhr.responseText);
-					notify("Terjadi kesalahan saat menyimpan data", "danger");
-				}
-			});
-		});
-
-		// Handle delete
-		$("#" + _table).on("click", "a.action-delete", function(e) {
-			e.preventDefault();
-			var temp = table_question.row($(this).closest('tr')).data();
-
-			swal({
-				title: "Anda akan menghapus data, lanjutkan?",
-				text: "Setelah dihapus, data tidak dapat dikembalikan lagi!",
-				type: "warning",
-				showCancelButton: true,
-				confirmButtonColor: '#DD6B55',
-				confirmButtonText: "Ya",
-				cancelButtonText: "Tidak",
-				closeOnConfirm: false
-			}).then((result) => {
-				if (result.value) {
+		// Confirm delete
+		function confirmDelete(id, name) {
+			bootbox.confirm("Apakah Anda yakin ingin menghapus soal '" + name + "' ?", function(result) {
+				if (result) {
 					$.ajax({
-						type: "delete",
-						url: "<?php echo base_url('question/ajax_delete/') ?>" + temp.id,
-						dataType: "json",
+						url: "<?php echo base_url('question/ajax_delete/') ?>" + id,
+						type: "POST",
 						success: function(response) {
-							if (response.status) {
-								$("#" + _table).DataTable().ajax.reload(null, false);
-								notify(response.data, "success");
+							var response = JSON.parse(response);
+							if (response.status === true) {
+								notify(response.data, 'success');
+								dt.ajax.reload();
 							} else {
-								notify(response.data, "danger");
-							};
+								notify(response.data, 'danger');
+							}
 						}
 					});
-				};
+				}
 			});
-		});
+		}
 
-		resetForm = () => {
-			_key = "";
-			$(`#${_form}`).trigger("reset");
-			$(`#${_form} .question-subject_id`).val('').trigger('change');
-			$(`#${_form} .question-chapter_id`).empty().append('<option value=""></option>').trigger('change');
-			$(`#${_form} .question-topic_id`).empty().append('<option value=""></option>').trigger('change');
+		// Reset form
+		function resetForm() {
+			// Clear all inputs
+			$("#" + _form)[0].reset();
 
-			// Kosongkan preview gambar
-			$('#question_image_preview').html('');
-			$('#option_a_image_preview').html('');
-			$('#option_b_image_preview').html('');
-			$('#option_c_image_preview').html('');
-			$('#option_d_image_preview').html('');
-			$('#option_e_image_preview').html('');
+			// Reset TinyMCE if exists
+			if (typeof tinymce !== 'undefined' && tinymce.editors.length > 0) {
+				tinymce.editors[0].setContent('');
+			}
 
-			// Reset group fields
-			$('.question-group_id').val('');
-			$('.question-group_order').val('1');
-			$('.question-is_group_main').val('0');
-		};
-
+			// Reset image previews
+			$('.image-preview').empty();
+		}
 	});
 </script>

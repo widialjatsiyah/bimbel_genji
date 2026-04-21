@@ -29,15 +29,12 @@ class Question extends AppBackend
      */
     public function index()
     {
-        // Get data for dropdowns
-        $subjects = $this->SubjectModel->getAll([], 'name', 'asc');
-        $list_subject = $this->init_list($subjects, 'id', 'name');
 
         $data = [
             'app' => $this->app(),
             'main_js' => $this->load_main_js('question'),
             'card_title' => 'Bank Soal',
-            'list_subject' => $list_subject,
+            // 'list_subject' => $this->list_subject,
         ];
         
         $this->template->set('title', $data['card_title'] . ' | ' . $data['app']->app_name, TRUE);
@@ -322,5 +319,302 @@ class Question extends AppBackend
         } else {
             show_404();
         }
+    }
+    
+    /**
+     * API endpoint to get all subjects
+     */
+    public function ajax_get_subjects()
+    {
+        $this->handle_ajax_request();
+        $this->load->model('SubjectModel');
+        
+        $subjects = $this->SubjectModel->getAll([], 'name', 'asc');
+        echo json_encode($subjects);
+    }
+    
+    /**
+     * Import questions from Excel file
+     */
+    public function import_from_excel()
+    {
+        $this->handle_ajax_request();
+        
+        // Load required models
+        $this->load->model(['SubjectModel', 'ChapterModel', 'TopicModel']);
+        $this->load->library('upload');
+        
+        // Get subject ID
+        $subject_id = $this->input->post('subject_id');
+        
+        if (!$subject_id) {
+            echo json_encode(['status' => false, 'data' => 'Subject ID harus disediakan']);
+            return;
+        }
+        
+        // Check if subject exists
+        $subject = $this->SubjectModel->getDetail(['id' => $subject_id]);
+        if (!$subject) {
+            echo json_encode(['status' => false, 'data' => 'Mata pelajaran tidak ditemukan']);
+            return;
+        }
+        
+        // Setup upload configuration
+        $config['upload_path'] = './uploads/temp/';
+        $config['allowed_types'] = 'xlsx|xls';
+        $config['max_size'] = '2048'; // 2MB
+        
+        // Create directory if not exists
+        if (!is_dir('./uploads/temp/')) {
+            mkdir('./uploads/temp/', 0755, true);
+        }
+        
+        $this->upload->initialize($config);
+        
+        if (!$this->upload->do_upload('import_file')) {
+            echo json_encode(['status' => false, 'data' => $this->upload->display_errors()]);
+            return;
+        }
+        
+        $upload_data = $this->upload->data();
+        
+        try {
+            // Process Excel file
+            $this->load->library('CpUpload');
+            
+            // Load spreadsheet reader
+            $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xlsx();
+            $spreadsheet = $reader->load('./uploads/temp/' . $upload_data['file_name']);
+            $worksheet = $spreadsheet->getActiveSheet();
+            
+            $imported_count = 0;
+            $failed_count = 0;
+            $errors = [];
+            
+            // Assuming row 1 is header, start from row 2
+            $highestRow = $worksheet->getHighestRow();
+            
+            // Loop through rows starting from row 2
+            for ($row = 2; $row <= $highestRow; $row++) {
+                // Prepare question data
+                $question_data = [
+                    'subject_id' => $subject_id,
+                    'question_text' => $worksheet->getCell('A' . $row)->getValue(),
+                    'option_a' => $worksheet->getCell('B' . $row)->getValue(),
+                    'option_b' => $worksheet->getCell('C' . $row)->getValue(),
+                    'option_c' => $worksheet->getCell('D' . $row)->getValue(),
+                    'option_d' => $worksheet->getCell('E' . $row)->getValue(),
+                    'option_e' => $worksheet->getCell('F' . $row)->getValue(),
+                    'correct_option' => $worksheet->getCell('G' . $row)->getValue(),
+                    'explanation' => $worksheet->getCell('H' . $row)->getValue(),
+                    'difficulty' => $worksheet->getCell('I' . $row)->getValue() ?: 'medium',
+                    'question_type' => strtolower($worksheet->getCell('J' . $row)->getValue()) ?: 'multiple_choice',
+                    'option_type' => $worksheet->getCell('K' . $row)->getValue() ?: 'text',
+                    'curriculum' => $worksheet->getCell('L' . $row)->getValue() ?: 'K13' // Column L for curriculum
+                ];
+                
+                // Validate required fields
+                if (empty($question_data['question_text'])) {
+                    $failed_count++;
+                    $errors[] = "Baris " . $row . ": Soal tidak boleh kosong";
+                    continue;
+                }
+                
+                // Set default difficulty if invalid
+                if (!in_array($question_data['difficulty'], ['easy', 'medium', 'hard'])) {
+                    $question_data['difficulty'] = 'medium';
+                }
+                
+                // Set default question type if invalid
+                if (!in_array($question_data['question_type'], ['multiple_choice', 'essay'])) {
+                    $question_data['question_type'] = 'multiple_choice';
+                }
+                
+                // Set default option type if invalid
+                if (!in_array($question_data['option_type'], ['text', 'image'])) {
+                    $question_data['option_type'] = 'text';
+                }
+                
+                // For essay questions, we don't need options A-E or correct_option
+                if ($question_data['question_type'] === 'essay') {
+                    $question_data['option_a'] = '';
+                    $question_data['option_b'] = '';
+                    $question_data['option_c'] = '';
+                    $question_data['option_d'] = '';
+                    $question_data['option_e'] = '';
+                    $question_data['correct_option'] = null;
+                } else { // Multiple choice
+                    // Ensure required options are present for multiple choice
+                    $options = [$question_data['option_a'], $question_data['option_b'], 
+                                $question_data['option_c'], $question_data['option_d'], $question_data['option_e']];
+                    
+                    // At least two options must be filled
+                    $filledOptions = array_filter($options, function($value) {
+                        return !empty(trim($value));
+                    });
+                    
+                    if (count($filledOptions) < 2) {
+                        $failed_count++;
+                        $errors[] = "Baris " . $row . ": Soal pilihan ganda harus memiliki setidaknya 2 opsi jawaban";
+                        continue;
+                    }
+                    
+                    // Validate correct option
+                    $validCorrectOptions = ['A', 'B', 'C', 'D', 'E', 'a', 'b', 'c', 'd', 'e'];
+                    if (!in_array($question_data['correct_option'], $validCorrectOptions)) {
+                        $failed_count++;
+                        $errors[] = "Baris " . $row . ": Jawaban benar harus berupa A, B, C, D, atau E";
+                        continue;
+                    }
+                    
+                    // Normalize correct option to uppercase
+                    $question_data['correct_option'] = strtoupper($question_data['correct_option']);
+                }
+                
+                // Save to database using QuestionModel
+                $this->load->model('QuestionModel');
+                
+                // Set POST data temporarily to match what the model expects
+                $_POST = $question_data;
+                
+                $result = $this->QuestionModel->insert();
+                
+                if ($result['status']) {
+                    $imported_count++;
+                } else {
+                    $failed_count++;
+                    $errors[] = "Baris " . $row . ": " . $result['data'];
+                }
+            }
+            
+            // Delete uploaded file after processing
+            unlink('./uploads/temp/' . $upload_data['file_name']);
+            
+            $message = "Berhasil mengimpor {$imported_count} soal";
+            if ($failed_count > 0) {
+                $message .= ", gagal mengimpor {$failed_count} soal.";
+                if (!empty($errors)) {
+                    $message .= " Error: " . implode(', ', array_slice($errors, 0, 5)); // Limit error display
+                    if (count($errors) > 5) {
+                        $message .= " dan " . (count($errors) - 5) . " error lainnya";
+                    }
+                }
+            }
+            
+            echo json_encode([
+                'status' => true, 
+                'data' => $message
+            ]);
+            
+        } catch (Exception $e) {
+            // Delete uploaded file if error occurs
+            if (file_exists('./uploads/temp/' . $upload_data['file_name'])) {
+                unlink('./uploads/temp/' . $upload_data['file_name']);
+            }
+            
+            echo json_encode(['status' => false, 'data' => 'Error saat memproses file: ' . $e->getMessage()]);
+        }
+    }
+    
+    /**
+     * Generate Excel template for question import
+     */
+    public function download_template()
+    {
+        // $this->handle_ajax_request();
+        
+        // Create new spreadsheet
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        
+        // Set title
+        $sheet->setTitle('Template Import Soal');
+        
+        // Header
+        $headers = [
+            'A1' => 'Soal',
+            'B1' => 'Opsi A',
+            'C1' => 'Opsi B',
+            'D1' => 'Opsi C',
+            'E1' => 'Opsi D',
+            'F1' => 'Opsi E',
+            'G1' => 'Jawaban Benar',
+            'H1' => 'Penjelasan',
+            'I1' => 'Tingkat Kesulitan',
+            'J1' => 'Jenis Soal',
+            'K1' => 'Tipe Opsi',
+            'L1' => 'Kurikulum'
+        ];
+        
+        foreach ($headers as $cell => $value) {
+            $sheet->setCellValue($cell, $value);
+        }
+        
+        // Styling header
+        $headerStyle = [
+            'font' => [
+                'bold' => true,
+                'size' => 12,
+            ],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => 'E6E6FA']
+            ]
+        ];
+        
+        $sheet->getStyle('A1:L1')->applyFromArray($headerStyle);
+        
+        // Add sample data
+        $sampleData = [
+            'A2' => 'Contoh soal pilihan ganda?',
+            'B2' => 'Opsi jawaban A',
+            'C2' => 'Opsi jawaban B',
+            'D2' => 'Opsi jawaban C',
+            'E2' => 'Opsi jawaban D',
+            'F2' => 'Opsi jawaban E',
+            'G2' => 'A',
+            'H2' => 'Penjelasan jawaban',
+            'I2' => 'medium',
+            'J2' => 'multiple_choice',
+            'K2' => 'text',
+            'L2' => 'K13'
+        ];
+        
+        foreach ($sampleData as $cell => $value) {
+            $sheet->setCellValue($cell, $value);
+        }
+        
+        // Add info notes
+        $sheet->setCellValue('A4', 'Catatan:');
+        $sheet->setCellValue('A5', '1. Kolom A (Soal): Wajib diisi');
+        $sheet->setCellValue('A6', '2. Kolom G (Jawaban Benar): Gunakan huruf A, B, C, D, atau E (kosongkan untuk soal essay)');
+        $sheet->setCellValue('A7', '3. Kolom I (Tingkat Kesulitan): Gunakan easy, medium, atau hard');
+        $sheet->setCellValue('A8', '4. Kolom J (Jenis Soal): Gunakan multiple_choice atau essay');
+        $sheet->setCellValue('A9', '5. Kolom K (Tipe Opsi): Gunakan text atau image');
+        $sheet->setCellValue('A10', '6. Kolom L (Kurikulum): Contoh: K13, KTSP, dll');
+        
+        // Set column widths
+        $sheet->getColumnDimension('A')->setWidth(30);
+        $sheet->getColumnDimension('B')->setWidth(20);
+        $sheet->getColumnDimension('C')->setWidth(20);
+        $sheet->getColumnDimension('D')->setWidth(20);
+        $sheet->getColumnDimension('E')->setWidth(20);
+        $sheet->getColumnDimension('F')->setWidth(20);
+        $sheet->getColumnDimension('G')->setWidth(15);
+        $sheet->getColumnDimension('H')->setWidth(30);
+        $sheet->getColumnDimension('I')->setWidth(15);
+        $sheet->getColumnDimension('J')->setWidth(15);
+        $sheet->getColumnDimension('K')->setWidth(15);
+        $sheet->getColumnDimension('L')->setWidth(15);
+        
+        // Create writer and output
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="template_import_soal.xlsx"');
+        header('Cache-Control: max-age=0');
+        
+        $writer->save('php://output');
+        exit;
     }
 }

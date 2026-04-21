@@ -4,6 +4,8 @@
         var _section = "question";
         var _form = "form-question";
         
+        // Define base_url for AJAX requests
+        var base_url = '<?php echo base_url(); ?>';
 
         // Fungsi untuk menangani preview gambar
         function previewImage(input, previewContainer) {
@@ -270,6 +272,199 @@
             }
         });
 
+        // Handle data add
+        $("#" + _section).on("click", "button." + _section + "-action-add", function(e) {
+            e.preventDefault();
+            resetForm();
+        });
+
+        // Handle data import button
+        $("#" + _section).on("click", "button." + _section + "-action-import", function(e) {
+            e.preventDefault();
+            openImportModal();
+        });
+
+        // Function to open import modal
+        function openImportModal() {
+            // Create and show import modal with subject selection
+            var modalHtml = `
+            <div class="modal fade" id="importModal" tabindex="-1" role="dialog" aria-labelledby="importModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="importModalLabel">Impor Soal dari Excel</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-info">
+                                <p><strong>Petunjuk:</strong></p>
+                                <ul>
+                                    <li>Unduh template Excel terlebih dahulu</li>
+                                    <li>Isi data soal sesuai kolom yang ditentukan</li>
+                                    <li>Pastikan kolom wajib diisi tidak kosong</li>
+                                </ul>
+                                <button type="button" class="btn btn-outline-primary" onclick="downloadTemplate()">Unduh Template Excel</button>
+                            </div>
+                            
+                            <form id="importForm">
+                                <div class="form-group">
+                                    <label for="subjectSelection">Pilih Mata Pelajaran:</label>
+                                    <select class="form-control select2" id="subjectSelection" name="subject_id" required>
+                                        <option value="">-- Pilih Mata Pelajaran --</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="importFile">Pilih File Excel:</label>
+                                    <input type="file" class="form-control" id="importFile" name="import_file" accept=".xlsx,.xls" required>
+                                    <small class="form-text text-muted">Format file harus .xlsx atau .xls</small>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                            <button type="button" class="btn btn-primary" id="startImportBtn">Mulai Impor</button>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+
+            // Add modal to body if not exists
+            if ($('#importModal').length === 0) {
+                $('body').append(modalHtml);
+                
+                // Load subjects into select
+                $.ajax({
+                    url: base_url + 'question/ajax_get_subjects',
+                    method: 'GET',
+                    dataType: 'json',
+                    success: function(response) {
+                        var select = $('#subjectSelection');
+                        response.forEach(function(subject) {
+                            select.append('<option value="' + subject.id + '">' + subject.name + '</option>');
+                        });
+                        
+                        // Initialize select2
+                        select.select2();
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Gagal memuat mata pelajaran:', error);
+                        showNotification('Gagal memuat daftar mata pelajaran', 'error');
+                    }
+                });
+            }
+
+            // Show modal
+            $('#importModal').modal('show');
+        }
+
+        // Function to download template
+        function downloadTemplate() {
+            window.location.href = base_url + 'question/download_template';
+        }
+
+        // Handle import button click
+        $(document).on('click', '#startImportBtn', function() {
+            var subjectId = $('#subjectSelection').val();
+            var fileInput = $('#importFile')[0];
+            
+            if (!subjectId) {
+                showNotification('Silakan pilih mata pelajaran', 'warning');
+                return;
+            }
+            
+            if (!fileInput.files[0]) {
+                showNotification('Silakan pilih file Excel', 'warning');
+                return;
+            }
+            
+            var formData = new FormData();
+            formData.append('import_file', fileInput.files[0]);
+            formData.append('subject_id', subjectId);
+            
+            // Disable button during import
+            $('#startImportBtn').prop('disabled', true).text('Mengimpor...');
+            
+            $.ajax({
+                url: base_url + 'question/import_from_excel',
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    var res = JSON.parse(response);
+                    
+                    if (res.status) {
+                        showNotification(res.data, 'success');
+                        $('#importModal').modal('hide');
+                        // Reload the table
+                        $('#' + _table).DataTable().ajax.reload(null, false);
+                    } else {
+                        showNotification(res.data, 'error');
+                    }
+                    
+                    // Re-enable button
+                    $('#startImportBtn').prop('disabled', false).text('Mulai Impor');
+                },
+                error: function(xhr, status, error) {
+                    console.error('Import error:', error);
+                    showNotification('Terjadi kesalahan saat mengimpor: ' + error, 'error');
+                    
+                    // Re-enable button
+                    $('#startImportBtn').prop('disabled', false).text('Mulai Impor');
+                }
+            });
+        });
+
+        // Function to show notification
+        function showNotification(message, type) {
+            // Using standard Bootstrap alert
+            var alertClass = 'alert-';
+            switch(type) {
+                case 'success':
+                    alertClass += 'success';
+                    break;
+                case 'error':
+                    alertClass += 'danger';
+                    break;
+                case 'warning':
+                    alertClass += 'warning';
+                    break;
+                default:
+                    alertClass += 'info';
+            }
+            
+            var alertHtml = '<div class="alert ' + alertClass + ' alert-dismissible fade show position-fixed" style="z-index: 9999; top: 20px; right: 20px;" role="alert">' +
+                message +
+                '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                    '<span aria-hidden="true">&times;</span>' +
+                '</button>' +
+            '</div>';
+            
+            $('body').append(alertHtml);
+            
+            // Auto remove after 5 seconds
+            setTimeout(function() {
+                $('.alert').fadeOut('slow', function() {
+                    $(this).remove();
+                });
+            }, 5000);
+        }
+
+        // Handle data edit
+        $("#" + _section).on("click", "button." + _section + "-action-edit", function(e) {
+            e.preventDefault();
+            var n = $(this).closest("tr").find('td:first').text() - 1;
+            var record = dt.rows(n).data()[0];
+
+            // Set current data
+            currentId = record.id;
+
+            // Load data to form
+            loadFormData(currentId);
+        });
+
         // Handle save
         $("." + _section + "-action-save").on("click", function(e) {
             e.preventDefault();
@@ -404,20 +599,22 @@
         }
     });
 
-	  // Handler untuk mengganti tampilan berdasarkan jenis soal
-      const questionTypeSelect = document.getElementById('question_type');
-      const mcSection = document.getElementById('multiple-choice-section');
-      const essaySection = document.getElementById('essay-section');
-        
-      questionTypeSelect.addEventListener('change', function() {
-          if (this.value === 'essay') {
-              mcSection.style.display = 'none';
-              essaySection.style.display = 'block';
-          } else {
-              mcSection.style.display = 'block';
-              essaySection.style.display = 'none';
-          }
-      });
-
-	  
+    // Handler untuk mengganti tampilan berdasarkan jenis soal
+    $(document).ready(function() {
+        const questionTypeSelect = document.getElementById('question_type');
+        const mcSection = document.getElementById('multiple-choice-section');
+        const essaySection = document.getElementById('essay-section');
+          
+        if(questionTypeSelect) {
+            questionTypeSelect.addEventListener('change', function() {
+                if (this.value === 'essay') {
+                    mcSection.style.display = 'none';
+                    essaySection.style.display = 'block';
+                } else {
+                    mcSection.style.display = 'block';
+                    essaySection.style.display = 'none';
+                }
+            });
+        }
+    });
 </script>
