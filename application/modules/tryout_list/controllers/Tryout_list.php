@@ -113,47 +113,74 @@ class Tryout_list extends AppBackend
             return;
         }
         
-        // Ambil sesi pertama dari tryout ini
-        $first_session = $this->TryoutSessionModel->getFirstSession($tryout_id);
-        if (!$first_session) {
-            $this->session->set_flashdata('error', 'Tryout tidak memiliki sesi apapun.');
-            redirect('tryout_list');
-            return;
+        // Ambil semua sesi untuk tryout ini
+        $all_sessions = $this->TryoutSessionModel->getByTryout($tryout_id);
+        
+        // Cek apakah user memiliki sesi aktif (status in_progress)
+        $active_session_found = false;
+        foreach ($all_sessions as $session) {
+            if ($this->UserTryoutModel->columnExists('tryout_session_id', 'user_tryouts')) {
+                // Cek apakah user sedang mengerjakan sesi ini
+                $active_tryout = $this->UserTryoutModel->getActiveUserTryoutBySession($user_id, $session->id);
+            } else {
+                // Cek apakah user sedang mengerjakan tryout ini (tanpa session)
+                $active_tryout = $this->UserTryoutModel->getActiveUserTryout($user_id, $tryout_id);
+            }
+            
+            // Jika ada sesi aktif dan belum kadaluarsa, langsung lanjutkan
+            if ($active_tryout && $active_tryout->status === 'in_progress') {
+                if ($this->UserTryoutModel->isSessionExpired($active_tryout->id)) {
+                    // Selesaikan sesi jika telah kadaluarsa
+                    $this->UserTryoutModel->completeExpiredSession($active_tryout->id);
+                    
+                    // Tampilkan pesan bahwa waktu telah habis
+                    $this->session->set_flashdata('error', 'Waktu pengerjaan sebelumnya telah habis. Silakan mulai kembali.');
+                    
+                    // Redirect ke halaman hasil atau kembali ke daftar tryout
+                    redirect('tryout_list');
+                    return;
+                }
+                
+                // Jika sesi aktif belum kadaluarsa, lanjutkan ke sesi tersebut
+                redirect('user_tryout/resume/' . $active_tryout->id);
+                return;
+            }
         }
         
-        // Cek apakah user sudah memiliki sesi aktif
-        $active_tryout = null;
-        if ($this->UserTryoutModel->columnExists('tryout_session_id', 'user_tryouts')) {
-            // Cek apakah user sedang mengerjakan sesi ini
-            $active_tryout = $this->UserTryoutModel->getActiveUserTryoutBySession($user_id, $first_session->id);
-        } else {
-            // Cek apakah user sedang mengerjakan tryout ini (tanpa session)
-            $active_tryout = $this->UserTryoutModel->getActiveUserTryout($user_id, $tryout_id);
+        // Jika tidak ada sesi aktif, cari sesi berikutnya yang belum dikerjakan
+        $next_session = null;
+        
+        foreach ($all_sessions as $session) {
+            // Cek apakah sesi ini sudah selesai dikerjakan oleh user
+            if ($this->UserTryoutModel->columnExists('tryout_session_id', 'user_tryouts')) {
+                $completed_tryout = $this->UserTryoutModel->getCompletedUserTryoutBySession($user_id, $session->id);
+            } else {
+                // Metode lama - tidak menggunakan sesi
+                $completed_tryout = $this->UserTryoutModel->getCompletedUserTryout($user_id, $tryout_id);
+            }
+            
+            // Jika sesi belum selesai dikerjakan, ini adalah sesi berikutnya
+            if (!$completed_tryout) {
+                $next_session = $session;
+                break;
+            }
         }
         
-        // Jika ada sesi aktif, cek apakah telah kadaluarsa
-        if ($active_tryout && $active_tryout->status === 'in_progress') {
-            if ($this->UserTryoutModel->isSessionExpired($active_tryout->id)) {
-                // Selesaikan sesi jika telah kadaluarsa
-                $this->UserTryoutModel->completeExpiredSession($active_tryout->id);
-                
-                // Tampilkan pesan bahwa waktu telah habis
-                $this->session->set_flashdata('error', 'Waktu pengerjaan sebelumnya telah habis. Silakan mulai kembali.');
-                
-                // Redirect ke halaman hasil atau kembali ke daftar tryout
+        // Jika semua sesi sudah dikerjakan, mulai dari awal (sesi pertama)
+        if (!$next_session) {
+            $first_session = $this->TryoutSessionModel->getFirstSession($tryout_id);
+            if ($first_session) {
+                $next_session = $first_session;
+            } else {
+                $this->session->set_flashdata('info', 'Tryout tidak memiliki sesi apapun.');
                 redirect('tryout_list');
                 return;
             }
-            
-            // Jika sesi aktif belum kadaluarsa, lanjutkan ke sesi tersebut
-            redirect('user_tryout/resume/' . $active_tryout->id);
-            return;
         }
         
-        // Mulai sesi pertama
-        // Gunakan fungsi yang kompatibel dengan struktur database saat ini
+        // Mulai sesi berikutnya
         if ($this->UserTryoutModel->columnExists('tryout_session_id', 'user_tryouts')) {
-            $user_tryout_id = $this->UserTryoutModel->startTryoutWithSession($user_id, $first_session->id);
+            $user_tryout_id = $this->UserTryoutModel->startTryoutWithSession($user_id, $next_session->id);
         } else {
             // Jika kolom tidak ada, kembali ke metode lama
             $user_tryout_id = $this->UserTryoutModel->startTryout($user_id, $tryout_id);
