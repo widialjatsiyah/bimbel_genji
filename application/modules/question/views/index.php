@@ -13,9 +13,8 @@
                         </button>
                 </div>
             </div>
-
-
             <?php include_once('import_form.php') ?>
+			
             <div class="table-responsive">
                 <table id="table-question" class="table table-bordered">
                     <thead class="thead-default">

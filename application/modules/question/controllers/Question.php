@@ -34,6 +34,7 @@ class Question extends AppBackend
             'app' => $this->app(),
             'main_js' => $this->load_main_js('question'),
             'card_title' => 'Bank Soal',
+			'list_subject' => $this->init_list($this->SubjectModel->getAll([], 'name', 'asc'), 'id', 'name'),
             // 'list_subject' => $this->list_subject,
         ];
         
@@ -585,13 +586,13 @@ class Question extends AppBackend
         }
         
         // Add info notes
-        $sheet->setCellValue('A4', 'Catatan:');
-        $sheet->setCellValue('A5', '1. Kolom A (Soal): Wajib diisi');
-        $sheet->setCellValue('A6', '2. Kolom G (Jawaban Benar): Gunakan huruf A, B, C, D, atau E (kosongkan untuk soal essay)');
-        $sheet->setCellValue('A7', '3. Kolom I (Tingkat Kesulitan): Gunakan easy, medium, atau hard');
-        $sheet->setCellValue('A8', '4. Kolom J (Jenis Soal): Gunakan multiple_choice atau essay');
-        $sheet->setCellValue('A9', '5. Kolom K (Tipe Opsi): Gunakan text atau image');
-        $sheet->setCellValue('A10', '6. Kolom L (Kurikulum): Contoh: K13, KTSP, dll');
+        // $sheet->setCellValue('A4', 'Catatan:');
+        // $sheet->setCellValue('A5', '1. Kolom A (Soal): Wajib diisi');
+        // $sheet->setCellValue('A6', '2. Kolom G (Jawaban Benar): Gunakan huruf A, B, C, D, atau E (kosongkan untuk soal essay)');
+        // $sheet->setCellValue('A7', '3. Kolom I (Tingkat Kesulitan): Gunakan easy, medium, atau hard');
+        // $sheet->setCellValue('A8', '4. Kolom J (Jenis Soal): Gunakan multiple_choice atau essay');
+        // $sheet->setCellValue('A9', '5. Kolom K (Tipe Opsi): Gunakan text atau image');
+        // $sheet->setCellValue('A10', '6. Kolom L (Kurikulum): Contoh: K13, KTSP, dll');
         
         // Set column widths
         $sheet->getColumnDimension('A')->setWidth(30);
