@@ -33,11 +33,11 @@ class TryoutSessionModel extends CI_Model
 				'label' => 'Jumlah Soal',
 				'rules' => 'required|integer|greater_than[0]'
 			],
-			[
-				'field' => 'is_random',
-				'label' => 'Acak Soal',
-				'rules' => 'required|in_list[0,1]'
-			],
+			// [
+			// 	'field' => 'is_random',
+			// 	'label' => 'Acak Soal',
+			// 	'rules' => 'required|in_list[0,1]'
+			// ],
 			[
 				'field' => 'scoring_method',
 				'label' => 'Metode Perhitungan Skor',
