@@ -32,6 +32,9 @@
 <script src="<?php echo base_url('themes/material_admin/vendors/select2/js/select2.full.min.js') ?>"></script>
 <script src="<?php echo base_url('themes/material_admin/vendors/nouislider/nouislider.min.js') ?>"></script>
 
+<!-- LaTeX Support -->
+<script src="<?php echo base_url('themes/_public/js/tinymce-latex-config.js') ?>"></script>
+
 <!-- Vendors: Data tables -->
 <script src="<?php echo base_url('themes/material_admin/vendors/datatables/jquery.dataTables.min.js') ?>"></script>
 <script src="<?php echo base_url('themes/material_admin/vendors/datatables/dataTables.rowGroup.js') ?>"></script>
@@ -149,7 +152,7 @@
 				if (response.count_unread > 0) {
 					$("#app-notification-flag").addClass("top-nav__notify");
 				} else {
-					$("#app-notification-flag").removeClass("top-nav__notify");
+					$("#app-notification-flag").removeClass("top-nav__notfiy");
 				};
 
 				if (response.count > 0) {
@@ -215,6 +218,62 @@
 			});
 		};
 	});
+</script>
+<!-- ============================================================== -->
+<!-- All Jquery -->
+<!-- ============================================================== -->
+<script src="<?php echo base_url();?>themes/material_admin/vendors/jquery/jquery.min.js"></script>
+<!-- Bootstrap tether Core JavaScript -->
+<script src="<?php echo base_url();?>themes/material_admin/vendors/popper/popper.min.js"></script>
+<script src="<?php echo base_url();?>themes/material_admin/vendors/bootstrap/js/bootstrap.min.js"></script>
+<!-- slimscrollbar scrollbar JavaScript -->
+<script src="<?php echo base_url();?>themes/material_admin/vendors/perfect-scrollbar/dist/js/perfect-scrollbar.jquery.min.js"></script>
+<!--Wave Effects -->
+<script src="<?php echo base_url();?>themes/material_admin/dist/js/waves.js"></script>
+<!--Menu sidebar -->
+<script src="<?php echo base_url();?>themes/material_admin/dist/js/sidebarmenu.js"></script>
+<!--Custom JavaScript -->
+<script src="<?php echo base_url();?>themes/material_admin/dist/js/custom.min.js"></script>
+<!-- ============================================================== -->
+<!-- Style switcher -->
+<!-- ============================================================== -->
+<script src="<?php echo base_url();?>themes/material_admin/vendors/styleswitcher/jQuery.style.switcher.js"></script>
+<!-- Select2 -->
+<script src="<?php echo base_url();?>themes/material_admin/vendors/select2/select2.full.min.js"></script>
+<!-- SweetAlert -->
+<script src="<?php echo base_url();?>themes/material_admin/vendors/sweetalert/sweetalert.min.js"></script>
+<!-- DataTables -->
+<script src="<?php echo base_url();?>themes/material_admin/vendors/datatables/datatables.min.js"></script>
+<!-- ChartJS -->
+<script src="<?php echo base_url();?>themes/material_admin/vendors/chartjs/Chart.min.js"></script>
+<!-- TinyMCE -->
+<script src="<?php echo base_url();?>themes/material_admin/vendors/tinymce/tinymce.min.js"></script>
+<!-- TinyMCE with LaTeX Configuration -->
+<script src="<?php echo base_url();?>themes/_public/js/tinymce-latex-config.js"></script>
+<!-- MathJax for LaTeX support -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script>
+    // Initialize MathJax configuration
+    window.MathJax = {
+        tex: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']],
+            displayMath: [['$$', '$$'], ['\\[', '\\]']]
+        },
+        svg: {
+            fontCache: 'global'
+        }
+    };
+    
+    // Initialize MathJax after page load
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.MathJax && typeof window.MathJax.typeset === 'function') {
+            // Delay typesetting to ensure all content is loaded
+            setTimeout(function() {
+                MathJax.typeset();
+            }, 500);
+        }
+    });
 </script>
 </body>
 

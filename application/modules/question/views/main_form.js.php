@@ -6,6 +6,46 @@
         
         // Define base_url for AJAX requests
         var base_url = '<?php echo base_url(); ?>';
+        
+        // Function to clean LaTeX content from unwanted HTML formatting
+        function cleanLatexContent(content) {
+            if (!content) return content;
+
+            // Protect LaTeX blocks with placeholders
+            var latexPlaceholders = [];
+            var placeholderIndex = 0;
+
+            // Match LaTeX blocks and replace with placeholders
+            content = content.replace(/\$\$[\s\S]*?\$\$/g, function(match) {
+                latexPlaceholders.push(match);
+                return '{LATEX_PLACEHOLDER_' + placeholderIndex++ + '}';
+            });
+
+            content = content.replace(/\$[\s\S]*?\$/g, function(match) {
+                latexPlaceholders.push(match);
+                return '{LATEX_PLACEHOLDER_' + placeholderIndex++ + '}';
+            });
+
+            content = content.replace(/\\\[[\s\S]*?\\\]/g, function(match) {
+                latexPlaceholders.push(match);
+                return '{LATEX_PLACEHOLDER_' + placeholderIndex++ + '}';
+            });
+
+            content = content.replace(/\\\([\s\S]*?\\\)/g, function(match) {
+                latexPlaceholders.push(match);
+                return '{LATEX_PLACEHOLDER_' + placeholderIndex++ + '}';
+            });
+
+            // Remove all HTML tags
+            content = content.replace(/<[^>]*>/g, '');
+
+            // Restore LaTeX blocks from placeholders
+            for (var i = 0; i < latexPlaceholders.length; i++) {
+                content = content.replace('{LATEX_PLACEHOLDER_' + i + '}', latexPlaceholders[i]);
+            }
+
+            return content;
+        }
 
         // Fungsi untuk menangani preview gambar
         function previewImage(input, previewContainer) {
@@ -127,7 +167,18 @@
                                 
                                 // Update TinyMCE jika ada
                                 if (typeof tinymce !== 'undefined' && tinymce.get('question_text')) {
-                                    tinymce.get('question_text').setContent(data.question_text);
+                                    // Clean the content before setting it
+                                    var cleanedContent = cleanLatexContent(data.question_text);
+                                    tinymce.get('question_text').setContent(cleanedContent);
+                                    
+                                    // Force MathJax to render the content
+                                    setTimeout(function() {
+                                        if (window.MathJax && typeof window.MathJax.typeset === 'function') {
+                                            MathJax.typeset(['#question_text']);
+                                        } else if (window.MathJax && typeof window.MathJax.Hub !== 'undefined') {
+                                            MathJax.Hub.Queue(["Typeset", MathJax.Hub, '#question_text']);
+                                        }
+                                    }, 100);
                                 } else {
                                     $('.question-question_text').val(data.question_text);
                                 }
@@ -144,19 +195,19 @@
                                     // Set gambar pilihan A jika ada
                                     handleOptionImage('a', data.option_a_image);
                                     
-                                    $('.question-option_b').val(data.option_b);
+                                    $('.question-option_b').val(cleanLatexContent(data.option_b));
                                     // Set gambar pilihan B jika ada
                                     handleOptionImage('b', data.option_b_image);
                                     
-                                    $('.question-option_c').val(data.option_c);
+                                    $('.question-option_c').val(cleanLatexContent(data.option_c));
                                     // Set gambar pilihan C jika ada
                                     handleOptionImage('c', data.option_c_image);
                                     
-                                    $('.question-option_d').val(data.option_d);
+                                    $('.question-option_d').val(cleanLatexContent(data.option_d));
                                     // Set gambar pilihan D jika ada
                                     handleOptionImage('d', data.option_d_image);
                                     
-                                    $('.question-option_e').val(data.option_e);
+                                    $('.question-option_e').val(cleanLatexContent(data.option_e));
                                     // Set gambar pilihan E jika ada
                                     handleOptionImage('e', data.option_e_image);
                                     
@@ -172,7 +223,24 @@
                                     }
                                 }
                                 
-                                $('.question-explanation').val(data.explanation);
+                                // Update TinyMCE explanation jika ada
+                                if (typeof tinymce !== 'undefined' && tinymce.get('explanation')) {
+                                    // Clean the content before setting it
+                                    var cleanedExplanation = cleanLatexContent(data.explanation);
+                                    tinymce.get('explanation').setContent(cleanedExplanation);
+                                    
+                                    // Force MathJax to render the content
+                                    setTimeout(function() {
+                                        if (window.MathJax && typeof window.MathJax.typeset === 'function') {
+                                            MathJax.typeset(['#explanation']);
+                                        } else if (window.MathJax && typeof window.MathJax.Hub !== 'undefined') {
+                                            MathJax.Hub.Queue(["Typeset", MathJax.Hub, '#explanation']);
+                                        }
+                                    }, 100);
+                                } else {
+                                    $('.question-explanation').val(data.explanation);
+                                }
+                                
                                 $('.question-video_explanation_url').val(data.video_explanation_url);
                             }, 300);
                         }, 300);
@@ -270,7 +338,7 @@
                 $('.row[id*="option-"]').find('.col-md-6:last-child').show(); // Tampilkan kolom gambar
                 $('.row[id*="option-"]').find('.col-md-6:first-child input').prop('required', false); // Hilangkan wajib teks
             }
-        });
+        }
 
         // Handle data add
         $("#" + _section).on("click", "button." + _section + "-action-add", function(e) {
@@ -474,6 +542,17 @@
                 tinymce.triggerSave();
             }
             
+            // Clean the content before saving
+            if (typeof tinymce !== 'undefined' && tinymce.editors.length > 0) {
+                for (var i = 0; i < tinymce.editors.length; i++) {
+                    var editor = tinymce.editors[i];
+                    var content = editor.getContent();
+                    var cleanedContent = cleanLatexContent(content);
+                    editor.setContent(cleanedContent);
+                }
+                tinymce.triggerSave();
+            }
+            
             // Gunakan FormData untuk mengirim data dan file
             var formData = new FormData($(`#${_form}`)[0]);
             
@@ -508,22 +587,29 @@
             });
         });
 
-        // Initialize TinyMCE if available
+        // Initialize TinyMCE if available with LaTeX support
         if (typeof tinymce !== 'undefined') {
             setTimeout(function() {
                 $('.tinymce-init').each(function() {
                     if (!$(this).hasClass('tinymce-initialized')) {
                         $(this).addClass('tinymce-initialized');
-                        // Initialize TinyMCE for the textarea
-                        tinymce.init({
-                            selector: '#' + this.id,
-                            plugins: 'advlist autolink lists link image charmap print preview anchor',
-                            toolbar: 'undo redo | formatselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image | help',
-                            height: 300
-                        });
+                        
+                        // Use the global configuration with LaTeX support
+                        initializeTinyMCEWithLatex('#' + this.id);
                     }
                 });
             }, 500);
+        }
+        
+        // Function to refresh MathJax rendering
+        function initializeMathJax() {
+            if (typeof MathJax !== 'undefined') {
+                if (typeof MathJax.typeset === 'function') {
+                    MathJax.typeset();
+                } else if (typeof MathJax.Hub !== 'undefined') {
+                    MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+                }
+            }
         }
         
         // Handler untuk mengkonversi input sederhana ke format JSON
@@ -598,7 +684,7 @@
             }, 500);
         }
     });
-
+    
     // Handler untuk mengganti tampilan berdasarkan jenis soal
     $(document).ready(function() {
         const questionTypeSelect = document.getElementById('question_type');
@@ -614,7 +700,24 @@
                     mcSection.style.display = 'block';
                     essaySection.style.display = 'none';
                 }
+                
+                // Refresh MathJax rendering after changing content
+                initializeMathJax();
             });
         }
+
+        // Initialize MathJax on page load
+        initializeMathJax();
     });
+    
+    // Function to refresh MathJax rendering
+    function initializeMathJax() {
+        if (typeof MathJax !== 'undefined') {
+            if (typeof MathJax.typeset === 'function') {
+                MathJax.typeset();
+            } else if (typeof MathJax.Hub !== 'undefined') {
+                MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+            }
+        }
+    }
 </script>

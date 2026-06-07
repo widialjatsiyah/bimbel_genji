@@ -21,7 +21,7 @@
 			background: white;
 			z-index: 1000;
 			padding: 15px;
-			box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+			box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 			margin-bottom: 20px;
 		}
 
@@ -29,7 +29,7 @@
 			background: white;
 			border-radius: 10px;
 			padding: 30px;
-			box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+			box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 			margin-bottom: 20px;
 		}
 
@@ -69,7 +69,7 @@
 
 		.options-list li:hover {
 			transform: translateY(-3px);
-			box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+			box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 			background: #e9ecef;
 		}
 
@@ -118,7 +118,7 @@
 			background: white;
 			border-radius: 10px;
 			padding: 20px;
-			box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+			box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 			position: sticky;
 			top: 100px;
 		}
@@ -174,7 +174,7 @@
 
 		.btn-unsure.active {
 			background: #e0a800;
-			box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.5);
+			box-shadow: 0 0 0 3px rgba(255,193,7,0.5);
 		}
 
 		.btn-next {
@@ -238,6 +238,23 @@
 			border: 1px solid #ced4da;
 			border-radius: 6px;
 			resize: vertical;
+		}
+
+		/* LaTeX/MathJax Styling */
+		.question-text mjx-container {
+			display: inline-block;
+			margin: 0 2px;
+		}
+
+		.options-list mjx-container {
+			display: inline-block;
+			margin: 0 2px;
+		}
+
+		/* Ensure proper display for display mode math */
+		mjx-container[display="true"] {
+			display: block;
+			margin: 1em 0;
 		}
 	</style>
 </head>
@@ -329,6 +346,21 @@
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 	<!-- jQuery -->
 	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	<!-- MathJax for LaTeX Support -->
+	<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+	<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+	<script>
+		// MathJax Configuration
+		window.MathJax = {
+			tex: {
+				inlineMath: [['$', '$'], ['\\(', '\\)']],
+				displayMath: [['$$', '$$'], ['\\[', '\\]']]
+			},
+			svg: {
+				fontCache: 'global'
+			}
+		};
+	</script>
 	<script>
 		$(document).ready(function() {
 			// Define BASE_URL for use in JavaScript
@@ -460,6 +492,15 @@
 
 				$('#question-text').html(questionHtml);
 
+				// Force MathJax to typeset the content after it's inserted
+				setTimeout(function() {
+					if (window.MathJax && typeof window.MathJax.typeset === 'function') {
+						MathJax.typeset(['#question-text']);
+					} else if (window.MathJax && typeof window.MathJax.Hub.Typeset === 'function') {
+						MathJax.Hub.Queue(['Typeset', MathJax.Hub, '#question-text']);
+					}
+				}, 100);
+
 				var optionsHtml = '';
 				// Check if the question type is multiple choice to show options
 				if (questionData.question_type === 'multiple_choice') {
@@ -482,6 +523,7 @@
 						if (optType === 'image') {
 							optionContent = '<img src="' + BASE_URL + optContent + '" class="img-fluid" style="max-width: 200px; margin-top: 10px;" alt="Gambar Opsi" />';
 						} else {
+							// For text options, render LaTeX if present
 							optionContent = optContent;
 						}
 
@@ -513,6 +555,15 @@
 					`;
 				}
 				$('#options-container').html(optionsHtml);
+
+				// Force MathJax to typeset the options content after it's inserted
+				setTimeout(function() {
+					if (window.MathJax && typeof window.MathJax.typeset === 'function') {
+						MathJax.typeset(['#options-container']);
+					} else if (window.MathJax && typeof window.MathJax.Hub.Typeset === 'function') {
+						MathJax.Hub.Queue(['Typeset', MathJax.Hub, '#options-container']);
+					}
+				}, 100);
 
 				// Set status ragu
 				if (answerMap[q.question_id] && answerMap[q.question_id].is_unsure == 1) {
@@ -992,9 +1043,9 @@
 						$('#time-expired-modal').modal('show');
 					}
 				},
-				error: function(xhr, status, error) {
-					console.log('Error checking session expiration: ' + error);
-				}
+				// error: function(xhr, status, error) {
+				// 	console.log('Error checking session expiration: ' + error);
+				// }
 			});
 		}
 
