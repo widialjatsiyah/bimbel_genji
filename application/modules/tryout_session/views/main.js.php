@@ -39,9 +39,13 @@
                     },
                     {
                         data: "tryout_title",
+						visible: false
                     },
                     {
                         data: "name",
+						render: function(data, type, row) {
+							return data + '<br><small class="text-muted">' + row.tryout_title + '</small>';
+						}	
                     },
                     {
                         data: "session_order",
@@ -91,10 +95,17 @@
                         data: null,
                         className: "center",
                         defaultContent: '<div class="action">' +
-                            '<a href="javascript:;" class="btn btn-sm btn-light btn-table-action action-edit" data-toggle="modal" data-target="#' + _modal + '"><i class="zmdi zmdi-edit"></i> Ubah</a>&nbsp;' +
-                            '<a href="javascript:;" class="btn btn-sm btn-warning btn-table-action action-manage-questions" data-toggle="modal" data-target="#' + _manageQuestionsModal + '"><i class="zmdi zmdi-book"></i> Atur Soal</a>&nbsp;' +
-                            '<a href="javascript:;" class="btn btn-sm btn-danger btn-table-action action-delete"><i class="zmdi zmdi-delete"></i> Hapus</a>' +
-                            '</div>'
+						`<div class="dropdown">
+							<button class="btn btn-sm btn-dark dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+								Aksi
+							</button>
+							<ul class="dropdown-menu">
+								<li><a class="dropdown-item" href="#">Tambah Soal Langsung</a></li>
+								<li><a href="javascript:;" class="dropdown-item action-edit" data-toggle="modal" data-target="#`+ _modal + `"> Ubah</a></li>
+								<li style=" border-top:1px solid #ff0000;"><a href="javascript:;" class="dropdown-item action-delete"> Hapus</a></li>
+							</ul>
+							</div>&nbsp;` +                            
+                            '<a href="javascript:;" class="btn btn-sm btn-primary btn-table-action action-manage-questions" data-toggle="modal" data-target="#' + _manageQuestionsModal + '"><i class="zmdi zmdi-book"></i> Atur Soal</a></div>' 
                     }
                 ],
                 autoWidth: !1,
