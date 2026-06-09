@@ -4,6 +4,46 @@
 		var _section = "question";
 		var _form = "form-question";
 
+		// Function to clean LaTeX content from unwanted HTML formatting
+		function cleanLatexContent(content) {
+			if (!content) return content;
+			
+			// Remove all HTML tags but preserve LaTeX content
+			// First, temporarily replace LaTeX blocks with placeholders to protect them
+			var latexPlaceholders = [];
+			var placeholderIndex = 0;
+			
+			// Match various LaTeX formats and replace with placeholders
+			content = content.replace(/\$\$[\s\S]*?\$\$/g, function(match) {
+				latexPlaceholders[placeholderIndex] = match;
+				return '{LATEX_PLACEHOLDER_' + placeholderIndex++ + '}';
+			});
+			
+			content = content.replace(/\$[\s\S]*?\$/g, function(match) {
+				latexPlaceholders[placeholderIndex] = match;
+				return '{LATEX_PLACEHOLDER_' + placeholderIndex++ + '}';
+			});
+			
+			content = content.replace(/\\\[[\s\S]*?\\\]/g, function(match) {
+				latexPlaceholders[placeholderIndex] = match;
+				return '{LATEX_PLACEHOLDER_' + placeholderIndex++ + '}';
+			});
+			
+			content = content.replace(/\\\([\s\S]*?\\\)/g, function(match) {
+				latexPlaceholders[placeholderIndex] = match;
+				return '{LATEX_PLACEHOLDER_' + placeholderIndex++ + '}';
+			});
+			
+			// Remove all HTML tags
+			content = content.replace(/<[^>]*>/g, '');
+			
+			// Replace placeholders back with original LaTeX content
+			for (var i = 0; i < latexPlaceholders.length; i++) {
+				content = content.replace('{LATEX_PLACEHOLDER_' + i + '}', latexPlaceholders[i]);
+			}
+			
+			return content;
+		}
 
 		// Preview functions
 		function previewImage(input, previewContainer) {
@@ -311,6 +351,13 @@
 
 			// If using TinyMCE, save content to textarea before submit
 			if (typeof tinymce !== 'undefined' && tinymce.editors.length > 0) {
+				// Clean the content before saving
+				for (var i = 0; i < tinymce.editors.length; i++) {
+					var editor = tinymce.editors[i];
+					var content = editor.getContent({format: 'raw'});
+					var cleanedContent = cleanLatexContent(content);
+					editor.setContent(cleanedContent, {format: 'raw'});
+				}
 				tinymce.triggerSave();
 			}
 

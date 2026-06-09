@@ -132,9 +132,15 @@
                     </div>
 
                     <div class="form-group">
-                        <label required>Teks Soal</label>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label required>Teks Soal</label>
+                            <a href="https://www.codecogs.com/latex/eqneditor.php" target="_blank" class="btn btn-sm btn-outline-primary">
+                                <i class="fa fa-calculator"></i> Online LaTeX Editor
+                            </a>
+                        </div>
                         <textarea id="question_text" name="question_text" class="form-control question-question_text tinymce-init" rows="4" placeholder="Tulis soal di sini..." required><?= isset($question_data) ? htmlspecialchars($question_data->question_text) : '' ?></textarea>
                         <i class="form-group__bar"></i>
+                        <small class="form-text text-muted">Gunakan format LaTeX untuk rumus matematika. Contoh: $x = \frac{-b \pm \sqrt{b^2-4ac}}{2a}$</small>
                     </div>
 
                     <!-- Gambar Soal -->
@@ -150,6 +156,13 @@
 
                     <!-- Bagian Pilihan Ganda -->
                     <div id="multiple-choice-section">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label>Pilihan Ganda</label>
+                            <a href="https://www.codecogs.com/latex/eqneditor.php" target="_blank" class="btn btn-sm btn-outline-primary">
+                                <i class="fa fa-calculator"></i> Online LaTeX Editor
+                            </a>
+                        </div>
+                        
                         <div class="row" id="option-a-container">
                             <div class="col-md-6">
                                 <div class="form-group">
@@ -284,9 +297,15 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Pembahasan</label>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label>Pembahasan</label>
+                            <a href="https://www.codecogs.com/latex/eqneditor.php" target="_blank" class="btn btn-sm btn-outline-primary">
+                                <i class="fa fa-calculator"></i> Online LaTeX Editor
+                            </a>
+                        </div>
                         <textarea name="explanation" class="form-control question-explanation" rows="3" placeholder="Penjelasan jawaban (opsional)"></textarea>
                         <i class="form-group__bar"></i>
+                        <small class="form-text text-muted">Gunakan format LaTeX untuk rumus matematika. Contoh: $x = \frac{-b \pm \sqrt{b^2-4ac}}{2a}$</small>
                     </div>
 
                     <div class="form-group">
