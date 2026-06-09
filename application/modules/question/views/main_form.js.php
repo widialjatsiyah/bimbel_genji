@@ -338,7 +338,7 @@
                 $('.row[id*="option-"]').find('.col-md-6:last-child').show(); // Tampilkan kolom gambar
                 $('.row[id*="option-"]').find('.col-md-6:first-child input').prop('required', false); // Hilangkan wajib teks
             }
-        }
+        });
 
         // Handle data add
         $("#" + _section).on("click", "button." + _section + "-action-add", function(e) {
