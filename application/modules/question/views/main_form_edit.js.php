@@ -7,41 +7,21 @@
 		// Function to clean LaTeX content from unwanted HTML formatting
 		function cleanLatexContent(content) {
 			if (!content) return content;
-			
-			// Remove all HTML tags but preserve LaTeX content
-			// First, temporarily replace LaTeX blocks with placeholders to protect them
-			var latexPlaceholders = [];
-			var placeholderIndex = 0;
-			
-			// Match various LaTeX formats and replace with placeholders
-			content = content.replace(/\$\$[\s\S]*?\$\$/g, function(match) {
-				latexPlaceholders[placeholderIndex] = match;
-				return '{LATEX_PLACEHOLDER_' + placeholderIndex++ + '}';
-			});
-			
-			content = content.replace(/\$[\s\S]*?\$/g, function(match) {
-				latexPlaceholders[placeholderIndex] = match;
-				return '{LATEX_PLACEHOLDER_' + placeholderIndex++ + '}';
-			});
-			
-			content = content.replace(/\\\[[\s\S]*?\\\]/g, function(match) {
-				latexPlaceholders[placeholderIndex] = match;
-				return '{LATEX_PLACEHOLDER_' + placeholderIndex++ + '}';
-			});
-			
-			content = content.replace(/\\\([\s\S]*?\\\)/g, function(match) {
-				latexPlaceholders[placeholderIndex] = match;
-				return '{LATEX_PLACEHOLDER_' + placeholderIndex++ + '}';
-			});
-			
-			// Remove all HTML tags
+
+			// 1. Decode entitas HTML terlebih dahulu
+			content = content.replace(/&amp;/g, '&')
+				.replace(/&nbsp;/g, ' ')
+				.replace(/&lt;/g, '<')
+				.replace(/&gt;/g, '>')
+				.replace(/&quot;/g, '"')
+				.replace(/&#39;/g, "'");
+
+			// 2. Hapus tag HTML (termasuk <p>, </p>, dll)
 			content = content.replace(/<[^>]*>/g, '');
-			
-			// Replace placeholders back with original LaTeX content
-			for (var i = 0; i < latexPlaceholders.length; i++) {
-				content = content.replace('{LATEX_PLACEHOLDER_' + i + '}', latexPlaceholders[i]);
-			}
-			
+
+			// 3. (Opsional) Hapus spasi berlebih atau baris kosong
+			content = content.replace(/\n\s*\n/g, '\n').trim();
+
 			return content;
 		}
 
@@ -354,9 +334,13 @@
 				// Clean the content before saving
 				for (var i = 0; i < tinymce.editors.length; i++) {
 					var editor = tinymce.editors[i];
-					var content = editor.getContent({format: 'raw'});
+					var content = editor.getContent({
+						format: 'raw'
+					});
 					var cleanedContent = cleanLatexContent(content);
-					editor.setContent(cleanedContent, {format: 'raw'});
+					editor.setContent(cleanedContent, {
+						format: 'raw'
+					});
 				}
 				tinymce.triggerSave();
 			}
@@ -364,7 +348,7 @@
 			var formData = new FormData(document.getElementById(_form));
 
 			$.ajax({
-				url: '<?php echo base_url("question/ajax_save/") ?>'+_key,
+				url: '<?php echo base_url("question/ajax_save/") ?>' + _key,
 				type: 'POST',
 				data: formData,
 				processData: false,
@@ -408,7 +392,7 @@
 			$('#multiple-choice-section .row[id*="option-"] .col-md-6:nth-child(2)').show();
 		}
 
-		
+
 		// Handler untuk mengkonversi input sederhana ke format JSON
 		$('#expected_keywords_simple').on('input', function() {
 			var simpleInput = $(this).val();
@@ -465,23 +449,23 @@
 	});
 
 	function jsonToWordScoreString(jsonString) {
-			try {
-				let data = JSON.parse(jsonString);
+		try {
+			let data = JSON.parse(jsonString);
 
-				if (!Array.isArray(data)) return '';
+			if (!Array.isArray(data)) return '';
 
-				let result = data.map(item => {
-					if (item.word !== undefined && item.score !== undefined) {
-						return item.word + '=' + item.score;
-					}
-					return '';
-				});
-
-				return result.join('\n');
-
-			} catch (e) {
-				console.error('Format JSON salah:', e);
+			let result = data.map(item => {
+				if (item.word !== undefined && item.score !== undefined) {
+					return item.word + '=' + item.score;
+				}
 				return '';
-			}
+			});
+
+			return result.join('\n');
+
+		} catch (e) {
+			console.error('Format JSON salah:', e);
+			return '';
 		}
+	}
 </script>

@@ -140,7 +140,7 @@
                         </div>
                         <textarea id="question_text" name="question_text" class="form-control question-question_text tinymce-init" rows="4" placeholder="Tulis soal di sini..." required><?= isset($question_data) ? htmlspecialchars($question_data->question_text) : '' ?></textarea>
                         <i class="form-group__bar"></i>
-                        <small class="form-text text-muted">Gunakan format LaTeX untuk rumus matematika. Contoh: $x = \frac{-b \pm \sqrt{b^2-4ac}}{2a}$</small>
+                        <small class="form-text text-muted">Gunakan format LaTeX untuk rumus matematika. <br>Inline Math: <b>$</b>code latex<b>$</b> <br> Display Math : <b>$$</b>code latex<b>$$</b></small>
                     </div>
 
                     <!-- Gambar Soal -->
