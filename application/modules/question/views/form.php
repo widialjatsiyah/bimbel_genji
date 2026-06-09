@@ -102,7 +102,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
                             </a>
                         </div>
                         <textarea class="form-control tinymce-init question-question_text" id="question_text" name="question_text" rows="5"></textarea>
-                        <small class="form-text text-muted">Gunakan format LaTeX untuk rumus matematika. Contoh: $x = \frac{-b \pm \sqrt{b^2-4ac}}{2a}$</small>
+                        <small class="form-text text-muted">Gunakan format LaTeX untuk rumus matematika. Inline Math: <b>$</b>code latex<b>$</b> <br> Display Math : <b>$$</b>code latex<b>$$</b></small>
                     </div>
 
                     <!-- Multiple Choice Section -->
