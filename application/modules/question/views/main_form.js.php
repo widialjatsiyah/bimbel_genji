@@ -1,361 +1,345 @@
 <script type="text/javascript">
-    $(document).ready(function() {
-        var _key = "<?php echo $this->uri->segment(3); ?>"; // Get ID from URL segment
-        var _section = "question";
-        var _form = "form-question";
-        
-        // Define base_url for AJAX requests
-        var base_url = '<?php echo base_url(); ?>';
-        
-        // Function to clean LaTeX content from unwanted HTML formatting
-        function cleanLatexContent(content) {
-            if (!content) return content;
+	$(document).ready(function() {
+		var _key = "<?php echo $this->uri->segment(3); ?>"; // Get ID from URL segment
+		var _section = "question";
+		var _form = "form-question";
 
-            // Protect LaTeX blocks with placeholders
-            var latexPlaceholders = [];
-            var placeholderIndex = 0;
+		// Define base_url for AJAX requests
+		var base_url = '<?php echo base_url(); ?>';
 
-            // Match LaTeX blocks and replace with placeholders
-            content = content.replace(/\$\$[\s\S]*?\$\$/g, function(match) {
-                latexPlaceholders.push(match);
-                return '{LATEX_PLACEHOLDER_' + placeholderIndex++ + '}';
-            });
+		// Function to clean LaTeX content from unwanted HTML formatting
+		function cleanLatexContent(content) {
+			if (!content) return content;
 
-            content = content.replace(/\$[\s\S]*?\$/g, function(match) {
-                latexPlaceholders.push(match);
-                return '{LATEX_PLACEHOLDER_' + placeholderIndex++ + '}';
-            });
+			// 1. Decode entitas HTML terlebih dahulu
+			content = content.replace(/&amp;/g, '&')
+				.replace(/&nbsp;/g, ' ')
+				.replace(/&lt;/g, '<')
+				.replace(/&gt;/g, '>')
+				.replace(/&quot;/g, '"')
+				.replace(/&#39;/g, "'");
 
-            content = content.replace(/\\\[[\s\S]*?\\\]/g, function(match) {
-                latexPlaceholders.push(match);
-                return '{LATEX_PLACEHOLDER_' + placeholderIndex++ + '}';
-            });
+			// 2. Hapus tag HTML (termasuk <p>, </p>, dll)
+			content = content.replace(/<[^>]*>/g, '');
 
-            content = content.replace(/\\\([\s\S]*?\\\)/g, function(match) {
-                latexPlaceholders.push(match);
-                return '{LATEX_PLACEHOLDER_' + placeholderIndex++ + '}';
-            });
+			// 3. (Opsional) Hapus spasi berlebih atau baris kosong
+			content = content.replace(/\n\s*\n/g, '\n').trim();
 
-            // Remove all HTML tags
-            content = content.replace(/<[^>]*>/g, '');
+			return content;
+		}
+		// Fungsi untuk menangani preview gambar
+		function previewImage(input, previewContainer) {
+			if (input.files && input.files[0]) {
+				var reader = new FileReader();
 
-            // Restore LaTeX blocks from placeholders
-            for (var i = 0; i < latexPlaceholders.length; i++) {
-                content = content.replace('{LATEX_PLACEHOLDER_' + i + '}', latexPlaceholders[i]);
-            }
+				reader.onload = function(e) {
+					previewContainer.html('<img src="' + e.target.result + '" style="max-width: 200px; max-height: 200px;" />');
+				}
 
-            return content;
-        }
+				reader.readAsDataURL(input.files[0]);
+			}
+		}
 
-        // Fungsi untuk menangani preview gambar
-        function previewImage(input, previewContainer) {
-            if (input.files && input.files[0]) {
-                var reader = new FileReader();
-                
-                reader.onload = function(e) {
-                    previewContainer.html('<img src="' + e.target.result + '" style="max-width: 200px; max-height: 200px;" />');
-                }
-                
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
+		// Event listener untuk file input gambar soal
+		$('.question-image').on('change', function() {
+			var previewContainer = $('#question_image_preview');
+			previewImage(this, previewContainer);
 
-        // Event listener untuk file input gambar soal
-        $('.question-image').on('change', function() {
-            var previewContainer = $('#question_image_preview');
-            previewImage(this, previewContainer);
-            
-            // Simpan nama file ke hidden input
-            if (this.files && this.files[0]) {
-                var formData = new FormData();
-                formData.append('image', this.files[0]);
-                
-                // Upload gambar dan simpan path-nya
-                $.ajax({
-                    url: '<?php echo base_url("question/upload_image") ?>',
-                    type: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function(response) {
-                        var res = JSON.parse(response);
-                        if(res.status) {
-                            $('.question-image-hidden').val(res.path);
-                        } else {
-                            notify('Gagal mengupload gambar: ' + res.error, 'danger');
-                        }
-                    },
-                    error: function() {
-                        notify('Terjadi kesalahan saat upload gambar', 'danger');
-                    }
-                });
-            }
-        });
+			// Simpan nama file ke hidden input
+			if (this.files && this.files[0]) {
+				var formData = new FormData();
+				formData.append('image', this.files[0]);
 
-        // Fungsi untuk menangani event listener file input gambar pilihan
-        function setupImageUploadHandlers(optionLetter) {
-            var inputName = 'option_' + optionLetter.toLowerCase() + '_image_file';
-            var hiddenClass = '.option_' + optionLetter.toLowerCase() + '_image-hidden';
-            var previewId = '#option_' + optionLetter.toLowerCase() + '_image_preview';
+				// Upload gambar dan simpan path-nya
+				$.ajax({
+					url: '<?php echo base_url("question/upload_image") ?>',
+					type: 'POST',
+					data: formData,
+					processData: false,
+					contentType: false,
+					success: function(response) {
+						var res = JSON.parse(response);
+						if (res.status) {
+							$('.question-image-hidden').val(res.path);
+						} else {
+							notify('Gagal mengupload gambar: ' + res.error, 'danger');
+						}
+					},
+					error: function() {
+						notify('Terjadi kesalahan saat upload gambar', 'danger');
+					}
+				});
+			}
+		});
 
-            $('[name="' + inputName + '"]').on('change', function() {
-                var previewContainer = $(previewId);
-                previewImage(this, previewContainer);
-                
-                if (this.files && this.files[0]) {
-                    var formData = new FormData();
-                    formData.append('image', this.files[0]);
-                    
-                    $.ajax({
-                        url: '<?php echo base_url("question/upload_image") ?>',
-                        type: 'POST',
-                        data: formData,
-                        processData: false,
-                        contentType: false,
-                        success: function(response) {
-                            var res = JSON.parse(response);
-                            if(res.status) {
-                                $(hiddenClass).val(res.path);
-                            } else {
-                                notify('Gagal mengupload gambar: ' + res.error, 'danger');
-                            }
-                        },
-                        error: function() {
-                            notify('Terjadi kesalahan saat upload gambar', 'danger');
-                        }
-                    });
-                }
-            });
-        }
+		// Fungsi untuk menangani event listener file input gambar pilihan
+		function setupImageUploadHandlers(optionLetter) {
+			var inputName = 'option_' + optionLetter.toLowerCase() + '_image_file';
+			var hiddenClass = '.option_' + optionLetter.toLowerCase() + '_image-hidden';
+			var previewId = '#option_' + optionLetter.toLowerCase() + '_image_preview';
 
-        // Event listener untuk file input gambar pilihan A-E
-        var optionLetters = ['A', 'B', 'C', 'D', 'E'];
-        $.each(optionLetters, function(i, letter) {
-            setupImageUploadHandlers(letter);
-        });
+			$('[name="' + inputName + '"]').on('change', function() {
+				var previewContainer = $(previewId);
+				previewImage(this, previewContainer);
 
-        // Populate form with data if editing
-        if (_key) {
-            $.ajax({
-                url: "<?php echo base_url('question/api_get_question/') ?>" + _key,
-                type: "GET",
-                success: function(response) {
-                    var data = response;
-                    
-                    // Set nilai form
-                    $('.question-subject_id').val(data.subject_id).trigger('change');
+				if (this.files && this.files[0]) {
+					var formData = new FormData();
+					formData.append('image', this.files[0]);
 
-                    // Setelah subject dipilih, tunggu chapter dan topic diload
-                    setTimeout(function() {
-                        $('.question-chapter_id').val(data.chapter_id).trigger('change');
-                        
-                        setTimeout(function() {
-                            $('.question-topic_id').val(data.topic_id).trigger('change');
-                            
-                            // Setelah semua dropdown selesai dimuat, masukkan nilai lainnya
-                            setTimeout(function() {
-                                // Set jenis soal
-                                $('.question-type').val(data.question_type).trigger('change');
-                                
-                                // Set tipe opsi
-                                $('.question-option_type').val(data.option_type || 'text').trigger('change');
-                                
-                                // Set group fields
-                                $('.question-group_id').val(data.group_id);
-                                $('.question-group_order').val(data.group_order || 1);
-                                $('.question-is_group_main').val(data.is_group_main || 0);
-                                
-                                // Update TinyMCE jika ada
-                                if (typeof tinymce !== 'undefined' && tinymce.get('question_text')) {
-                                    // Clean the content before setting it
-                                    var cleanedContent = cleanLatexContent(data.question_text);
-                                    tinymce.get('question_text').setContent(cleanedContent);
-                                    
-                                    // Force MathJax to render the content
-                                    setTimeout(function() {
-                                        if (window.MathJax && typeof window.MathJax.typeset === 'function') {
-                                            MathJax.typeset(['#question_text']);
-                                        } else if (window.MathJax && typeof window.MathJax.Hub !== 'undefined') {
-                                            MathJax.Hub.Queue(["Typeset", MathJax.Hub, '#question_text']);
-                                        }
-                                    }, 100);
-                                } else {
-                                    $('.question-question_text').val(data.question_text);
-                                }
-                                
-                                // Set gambar soal jika ada
-                                if(data.question_image) {
-                                    $('.question-image-hidden').val(data.question_image);
-                                    $('#question_image_preview').html('<img src="<?php echo base_url() ?>' + data.question_image + '" style="max-width: 200px; max-height: 200px;" />');
-                                }
-                                
-                                // Jika soal pilihan ganda
-                                if(data.question_type === 'multiple_choice') {
-                                    $('.question-option_a').val(data.option_a);
-                                    // Set gambar pilihan A jika ada
-                                    handleOptionImage('a', data.option_a_image);
-                                    
-                                    $('.question-option_b').val(cleanLatexContent(data.option_b));
-                                    // Set gambar pilihan B jika ada
-                                    handleOptionImage('b', data.option_b_image);
-                                    
-                                    $('.question-option_c').val(cleanLatexContent(data.option_c));
-                                    // Set gambar pilihan C jika ada
-                                    handleOptionImage('c', data.option_c_image);
-                                    
-                                    $('.question-option_d').val(cleanLatexContent(data.option_d));
-                                    // Set gambar pilihan D jika ada
-                                    handleOptionImage('d', data.option_d_image);
-                                    
-                                    $('.question-option_e').val(cleanLatexContent(data.option_e));
-                                    // Set gambar pilihan E jika ada
-                                    handleOptionImage('e', data.option_e_image);
-                                    
-                                    $('.question-correct_option').val(data.correct_option);
-                                } 
-                                // Jika soal esai
-                                else if(data.question_type === 'essay') {
-                                    if(data.expected_keywords) {
-                                        $('#expected_keywords').val(data.expected_keywords);
-                                    }
-                                    if(data.min_keyword_matches) {
-                                        $('input[name="min_keyword_matches"]').val(data.min_keyword_matches);
-                                    }
-                                }
-                                
-                                // Update TinyMCE explanation jika ada
-                                if (typeof tinymce !== 'undefined' && tinymce.get('explanation')) {
-                                    // Clean the content before setting it
-                                    var cleanedExplanation = cleanLatexContent(data.explanation);
-                                    tinymce.get('explanation').setContent(cleanedExplanation);
-                                    
-                                    // Force MathJax to render the content
-                                    setTimeout(function() {
-                                        if (window.MathJax && typeof window.MathJax.typeset === 'function') {
-                                            MathJax.typeset(['#explanation']);
-                                        } else if (window.MathJax && typeof window.MathJax.Hub !== 'undefined') {
-                                            MathJax.Hub.Queue(["Typeset", MathJax.Hub, '#explanation']);
-                                        }
-                                    }, 100);
-                                } else {
-                                    $('.question-explanation').val(data.explanation);
-                                }
-                                
-                                $('.question-video_explanation_url').val(data.video_explanation_url);
-                            }, 300);
-                        }, 300);
-                    }, 300);
-                },
-                error: function() {
-                    notify('Gagal memuat data soal', 'danger');
-                }
-            });
-        }
+					$.ajax({
+						url: '<?php echo base_url("question/upload_image") ?>',
+						type: 'POST',
+						data: formData,
+						processData: false,
+						contentType: false,
+						success: function(response) {
+							var res = JSON.parse(response);
+							if (res.status) {
+								$(hiddenClass).val(res.path);
+							} else {
+								notify('Gagal mengupload gambar: ' + res.error, 'danger');
+							}
+						},
+						error: function() {
+							notify('Terjadi kesalahan saat upload gambar', 'danger');
+						}
+					});
+				}
+			});
+		}
 
-		
-                // Fungsi untuk menangani gambar pilihan saat edit
-                function handleOptionImage(optionLetter, imagePath) {
-                    if(imagePath) {
-                        $('.option_' + optionLetter + '_image-hidden').val(imagePath);
-                        $('#option_' + optionLetter + '_image_preview').html('<img src="<?php echo base_url() ?>' + imagePath + '" style="max-width: 200px; max-height: 200px;" />');
-                    }
-                }
+		// Event listener untuk file input gambar pilihan A-E
+		var optionLetters = ['A', 'B', 'C', 'D', 'E'];
+		$.each(optionLetters, function(i, letter) {
+			setupImageUploadHandlers(letter);
+		});
 
-        // Chained dropdown: Subject -> Chapter
-        $('.question-subject_id').on('change', function() {
-            var subject_id = $(this).val();
-            var $chapter = $('.question-chapter_id');
-            var $topic = $('.question-topic_id');
+		// Populate form with data if editing
+		if (_key) {
+			$.ajax({
+				url: "<?php echo base_url('question/api_get_question/') ?>" + _key,
+				type: "GET",
+				success: function(response) {
+					var data = response;
 
-            // Reset chapter & topic
-            $chapter.empty().append('<option value=""></option>').trigger('change');
-            $topic.empty().append('<option value=""></option>').trigger('change');
+					// Set nilai form
+					$('.question-subject_id').val(data.subject_id).trigger('change');
 
-            if (subject_id) {
-                $.ajax({
-                    url: '<?php echo base_url("question/ajax_get_chapters") ?>',
-                    type: 'get',
-                    data: { subject_id: subject_id },
-                    dataType: 'json',
-                    success: function(data) {
-                        $.each(data, function(i, item) {
-                            $chapter.append('<option value="' + item.id + '">' + item.name + '</option>');
-                        });
-                        $chapter.trigger('change');
-                    }
-                });
-            }
-        });
+					// Setelah subject dipilih, tunggu chapter dan topic diload
+					setTimeout(function() {
+						$('.question-chapter_id').val(data.chapter_id).trigger('change');
 
-        // Chained dropdown: Chapter -> Topic
-        $('.question-chapter_id').on('change', function() {
-            var chapter_id = $(this).val();
-            var $topic = $('.question-topic_id');
+						setTimeout(function() {
+							$('.question-topic_id').val(data.topic_id).trigger('change');
 
-            // Reset topic
-            $topic.empty().append('<option value=""></option>').trigger('change');
+							// Setelah semua dropdown selesai dimuat, masukkan nilai lainnya
+							setTimeout(function() {
+								// Set jenis soal
+								$('.question-type').val(data.question_type).trigger('change');
 
-            if (chapter_id) {
-                $.ajax({
-                    url: '<?php echo base_url("question/ajax_get_topics") ?>',
-                    type: 'get',
-                    data: { chapter_id: chapter_id },
-                    dataType: 'json',
-                    success: function(data) {
-                        $.each(data, function(i, item) {
-                            $topic.append('<option value="' + item.id + '">' + item.name + '</option>');
-                        });
-                        $topic.trigger('change');
-                    }
-                });
-            }
-        });
+								// Set tipe opsi
+								$('.question-option_type').val(data.option_type || 'text').trigger('change');
 
-        // Handle change of question type
-        $('.question-type').on('change', function() {
-            var type = $(this).val();
-            if (type === 'essay') {
-                $('#multiple-choice-section').hide();
-                $('#essay-section').show();
-            } else {
-                $('#multiple-choice-section').show();
-                $('#essay-section').hide();
-            }
-        });
-        
-        // Handle change of option type
-        $('.question-option_type').on('change', function() {
-            var optionType = $(this).val();
-            
-            if (optionType === 'text') {
-                // Sembunyikan input file gambar dan tampilkan input teks
-                $('.row[id*="option-"]').find('.col-md-6:last-child').hide(); // Sembunyikan kolom gambar
-                $('.row[id*="option-"]').find('.col-md-6:first-child').show(); // Tampilkan kolom teks
-                $('.row[id*="option-"]').find('.col-md-6:first-child input').prop('required', true); // Wajibkan teks
-            } else if (optionType === 'image') {
-                // Sembunyikan input teks dan tampilkan input file gambar
-                $('.row[id*="option-"]').find('.col-md-6:first-child').hide(); // Sembunyikan kolom teks
-                $('.row[id*="option-"]').find('.col-md-6:last-child').show(); // Tampilkan kolom gambar
-                $('.row[id*="option-"]').find('.col-md-6:first-child input').prop('required', false); // Hilangkan wajib teks
-            }
-        });
+								// Set group fields
+								$('.question-group_id').val(data.group_id);
+								$('.question-group_order').val(data.group_order || 1);
+								$('.question-is_group_main').val(data.is_group_main || 0);
 
-        // Handle data add
-        $("#" + _section).on("click", "button." + _section + "-action-add", function(e) {
-            e.preventDefault();
-            resetForm();
-        });
+								// Update TinyMCE jika ada
+								if (typeof tinymce !== 'undefined' && tinymce.get('question_text')) {
+									// Clean the content before setting it
+									var cleanedContent = cleanLatexContent(data.question_text);
+									tinymce.get('question_text').setContent(cleanedContent);
 
-        // Handle data import button
-        $("#" + _section).on("click", "button." + _section + "-action-import", function(e) {
-            e.preventDefault();
-            openImportModal();
-        });
+									// Force MathJax to render the content
+									setTimeout(function() {
+										if (window.MathJax && typeof window.MathJax.typeset === 'function') {
+											MathJax.typeset(['#question_text']);
+										} else if (window.MathJax && typeof window.MathJax.Hub !== 'undefined') {
+											MathJax.Hub.Queue(["Typeset", MathJax.Hub, '#question_text']);
+										}
+									}, 100);
+								} else {
+									$('.question-question_text').val(data.question_text);
+								}
 
-        // Function to open import modal
-        function openImportModal() {
-            // Create and show import modal with subject selection
-            var modalHtml = `
+								// Set gambar soal jika ada
+								if (data.question_image) {
+									$('.question-image-hidden').val(data.question_image);
+									$('#question_image_preview').html('<img src="<?php echo base_url() ?>' + data.question_image + '" style="max-width: 200px; max-height: 200px;" />');
+								}
+
+								// Jika soal pilihan ganda
+								if (data.question_type === 'multiple_choice') {
+									$('.question-option_a').val(data.option_a);
+									// Set gambar pilihan A jika ada
+									handleOptionImage('a', data.option_a_image);
+
+									$('.question-option_b').val(cleanLatexContent(data.option_b));
+									// Set gambar pilihan B jika ada
+									handleOptionImage('b', data.option_b_image);
+
+									$('.question-option_c').val(cleanLatexContent(data.option_c));
+									// Set gambar pilihan C jika ada
+									handleOptionImage('c', data.option_c_image);
+
+									$('.question-option_d').val(cleanLatexContent(data.option_d));
+									// Set gambar pilihan D jika ada
+									handleOptionImage('d', data.option_d_image);
+
+									$('.question-option_e').val(cleanLatexContent(data.option_e));
+									// Set gambar pilihan E jika ada
+									handleOptionImage('e', data.option_e_image);
+
+									$('.question-correct_option').val(data.correct_option);
+								}
+								// Jika soal esai
+								else if (data.question_type === 'essay') {
+									if (data.expected_keywords) {
+										$('#expected_keywords').val(data.expected_keywords);
+									}
+									if (data.min_keyword_matches) {
+										$('input[name="min_keyword_matches"]').val(data.min_keyword_matches);
+									}
+								}
+
+								// Update TinyMCE explanation jika ada
+								if (typeof tinymce !== 'undefined' && tinymce.get('explanation')) {
+									// Clean the content before setting it
+									var cleanedExplanation = cleanLatexContent(data.explanation);
+									tinymce.get('explanation').setContent(cleanedExplanation);
+
+									// Force MathJax to render the content
+									setTimeout(function() {
+										if (window.MathJax && typeof window.MathJax.typeset === 'function') {
+											MathJax.typeset(['#explanation']);
+										} else if (window.MathJax && typeof window.MathJax.Hub !== 'undefined') {
+											MathJax.Hub.Queue(["Typeset", MathJax.Hub, '#explanation']);
+										}
+									}, 100);
+								} else {
+									$('.question-explanation').val(data.explanation);
+								}
+
+								$('.question-video_explanation_url').val(data.video_explanation_url);
+							}, 300);
+						}, 300);
+					}, 300);
+				},
+				error: function() {
+					notify('Gagal memuat data soal', 'danger');
+				}
+			});
+		}
+
+
+		// Fungsi untuk menangani gambar pilihan saat edit
+		function handleOptionImage(optionLetter, imagePath) {
+			if (imagePath) {
+				$('.option_' + optionLetter + '_image-hidden').val(imagePath);
+				$('#option_' + optionLetter + '_image_preview').html('<img src="<?php echo base_url() ?>' + imagePath + '" style="max-width: 200px; max-height: 200px;" />');
+			}
+		}
+
+		// Chained dropdown: Subject -> Chapter
+		$('.question-subject_id').on('change', function() {
+			var subject_id = $(this).val();
+			var $chapter = $('.question-chapter_id');
+			var $topic = $('.question-topic_id');
+
+			// Reset chapter & topic
+			$chapter.empty().append('<option value=""></option>').trigger('change');
+			$topic.empty().append('<option value=""></option>').trigger('change');
+
+			if (subject_id) {
+				$.ajax({
+					url: '<?php echo base_url("question/ajax_get_chapters") ?>',
+					type: 'get',
+					data: {
+						subject_id: subject_id
+					},
+					dataType: 'json',
+					success: function(data) {
+						$.each(data, function(i, item) {
+							$chapter.append('<option value="' + item.id + '">' + item.name + '</option>');
+						});
+						$chapter.trigger('change');
+					}
+				});
+			}
+		});
+
+		// Chained dropdown: Chapter -> Topic
+		$('.question-chapter_id').on('change', function() {
+			var chapter_id = $(this).val();
+			var $topic = $('.question-topic_id');
+
+			// Reset topic
+			$topic.empty().append('<option value=""></option>').trigger('change');
+
+			if (chapter_id) {
+				$.ajax({
+					url: '<?php echo base_url("question/ajax_get_topics") ?>',
+					type: 'get',
+					data: {
+						chapter_id: chapter_id
+					},
+					dataType: 'json',
+					success: function(data) {
+						$.each(data, function(i, item) {
+							$topic.append('<option value="' + item.id + '">' + item.name + '</option>');
+						});
+						$topic.trigger('change');
+					}
+				});
+			}
+		});
+
+		// Handle change of question type
+		$('.question-type').on('change', function() {
+			var type = $(this).val();
+			if (type === 'essay') {
+				$('#multiple-choice-section').hide();
+				$('#essay-section').show();
+			} else {
+				$('#multiple-choice-section').show();
+				$('#essay-section').hide();
+			}
+		});
+
+		// Handle change of option type
+		$('.question-option_type').on('change', function() {
+			var optionType = $(this).val();
+
+			if (optionType === 'text') {
+				// Sembunyikan input file gambar dan tampilkan input teks
+				$('.row[id*="option-"]').find('.col-md-6:last-child').hide(); // Sembunyikan kolom gambar
+				$('.row[id*="option-"]').find('.col-md-6:first-child').show(); // Tampilkan kolom teks
+				$('.row[id*="option-"]').find('.col-md-6:first-child input').prop('required', true); // Wajibkan teks
+			} else if (optionType === 'image') {
+				// Sembunyikan input teks dan tampilkan input file gambar
+				$('.row[id*="option-"]').find('.col-md-6:first-child').hide(); // Sembunyikan kolom teks
+				$('.row[id*="option-"]').find('.col-md-6:last-child').show(); // Tampilkan kolom gambar
+				$('.row[id*="option-"]').find('.col-md-6:first-child input').prop('required', false); // Hilangkan wajib teks
+			}
+		});
+
+		// Handle data add
+		$("#" + _section).on("click", "button." + _section + "-action-add", function(e) {
+			e.preventDefault();
+			resetForm();
+		});
+
+		// Handle data import button
+		$("#" + _section).on("click", "button." + _section + "-action-import", function(e) {
+			e.preventDefault();
+			openImportModal();
+		});
+
+		// Function to open import modal
+		function openImportModal() {
+			// Create and show import modal with subject selection
+			var modalHtml = `
             <div class="modal fade" id="importModal" tabindex="-1" role="dialog" aria-labelledby="importModalLabel" aria-hidden="true">
                 <div class="modal-dialog" role="document">
                     <div class="modal-content">
@@ -398,326 +382,329 @@
                 </div>
             </div>`;
 
-            // Add modal to body if not exists
-            if ($('#importModal').length === 0) {
-                $('body').append(modalHtml);
-                
-                // Load subjects into select
-                $.ajax({
-                    url: base_url + 'question/ajax_get_subjects',
-                    method: 'GET',
-                    dataType: 'json',
-                    success: function(response) {
-                        var select = $('#subjectSelection');
-                        response.forEach(function(subject) {
-                            select.append('<option value="' + subject.id + '">' + subject.name + '</option>');
-                        });
-                        
-                        // Initialize select2
-                        select.select2();
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Gagal memuat mata pelajaran:', error);
-                        showNotification('Gagal memuat daftar mata pelajaran', 'error');
-                    }
-                });
-            }
+			// Add modal to body if not exists
+			if ($('#importModal').length === 0) {
+				$('body').append(modalHtml);
 
-            // Show modal
-            $('#importModal').modal('show');
-        }
+				// Load subjects into select
+				$.ajax({
+					url: base_url + 'question/ajax_get_subjects',
+					method: 'GET',
+					dataType: 'json',
+					success: function(response) {
+						var select = $('#subjectSelection');
+						response.forEach(function(subject) {
+							select.append('<option value="' + subject.id + '">' + subject.name + '</option>');
+						});
 
-        // Function to download template
-        function downloadTemplate() {
-            window.location.href = base_url + 'question/download_template';
-        }
+						// Initialize select2
+						select.select2();
+					},
+					error: function(xhr, status, error) {
+						console.error('Gagal memuat mata pelajaran:', error);
+						showNotification('Gagal memuat daftar mata pelajaran', 'error');
+					}
+				});
+			}
 
-        // Handle import button click
-        $(document).on('click', '#startImportBtn', function() {
-            var subjectId = $('#subjectSelection').val();
-            var fileInput = $('#importFile')[0];
-            
-            if (!subjectId) {
-                showNotification('Silakan pilih mata pelajaran', 'warning');
-                return;
-            }
-            
-            if (!fileInput.files[0]) {
-                showNotification('Silakan pilih file Excel', 'warning');
-                return;
-            }
-            
-            var formData = new FormData();
-            formData.append('import_file', fileInput.files[0]);
-            formData.append('subject_id', subjectId);
-            
-            // Disable button during import
-            $('#startImportBtn').prop('disabled', true).text('Mengimpor...');
-            
-            $.ajax({
-                url: base_url + 'question/import_from_excel',
-                method: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function(response) {
-                    var res = JSON.parse(response);
-                    
-                    if (res.status) {
-                        showNotification(res.data, 'success');
-                        $('#importModal').modal('hide');
-                        // Reload the table
-                        $('#' + _table).DataTable().ajax.reload(null, false);
-                    } else {
-                        showNotification(res.data, 'error');
-                    }
-                    
-                    // Re-enable button
-                    $('#startImportBtn').prop('disabled', false).text('Mulai Impor');
-                },
-                error: function(xhr, status, error) {
-                    console.error('Import error:', error);
-                    showNotification('Terjadi kesalahan saat mengimpor: ' + error, 'error');
-                    
-                    // Re-enable button
-                    $('#startImportBtn').prop('disabled', false).text('Mulai Impor');
-                }
-            });
-        });
+			// Show modal
+			$('#importModal').modal('show');
+		}
 
-        // Function to show notification
-        function showNotification(message, type) {
-            // Using standard Bootstrap alert
-            var alertClass = 'alert-';
-            switch(type) {
-                case 'success':
-                    alertClass += 'success';
-                    break;
-                case 'error':
-                    alertClass += 'danger';
-                    break;
-                case 'warning':
-                    alertClass += 'warning';
-                    break;
-                default:
-                    alertClass += 'info';
-            }
-            
-            var alertHtml = '<div class="alert ' + alertClass + ' alert-dismissible fade show position-fixed" style="z-index: 9999; top: 20px; right: 20px;" role="alert">' +
-                message +
-                '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
-                    '<span aria-hidden="true">&times;</span>' +
-                '</button>' +
-            '</div>';
-            
-            $('body').append(alertHtml);
-            
-            // Auto remove after 5 seconds
-            setTimeout(function() {
-                $('.alert').fadeOut('slow', function() {
-                    $(this).remove();
-                });
-            }, 5000);
-        }
+		// Function to download template
+		function downloadTemplate() {
+			window.location.href = base_url + 'question/download_template';
+		}
 
-        // Handle data edit
-        $("#" + _section).on("click", "button." + _section + "-action-edit", function(e) {
-            e.preventDefault();
-            var n = $(this).closest("tr").find('td:first').text() - 1;
-            var record = dt.rows(n).data()[0];
+		// Handle import button click
+		$(document).on('click', '#startImportBtn', function() {
+			var subjectId = $('#subjectSelection').val();
+			var fileInput = $('#importFile')[0];
 
-            // Set current data
-            currentId = record.id;
+			if (!subjectId) {
+				showNotification('Silakan pilih mata pelajaran', 'warning');
+				return;
+			}
 
-            // Load data to form
-            loadFormData(currentId);
-        });
+			if (!fileInput.files[0]) {
+				showNotification('Silakan pilih file Excel', 'warning');
+				return;
+			}
 
-        // Handle save
-        $("." + _section + "-action-save").on("click", function(e) {
-            e.preventDefault();
-            
-            // Jika menggunakan TinyMCE, pastikan konten disimpan ke textarea sebelum submit
-            if (typeof tinymce !== 'undefined' && tinymce.editors.length > 0) {
-                tinymce.triggerSave();
-            }
-            
-            // Clean the content before saving
-            if (typeof tinymce !== 'undefined' && tinymce.editors.length > 0) {
-                for (var i = 0; i < tinymce.editors.length; i++) {
-                    var editor = tinymce.editors[i];
-                    var content = editor.getContent();
-                    var cleanedContent = cleanLatexContent(content);
-                    editor.setContent(cleanedContent);
-                }
-                tinymce.triggerSave();
-            }
-            
-            // Gunakan FormData untuk mengirim data dan file
-            var formData = new FormData($(`#${_form}`)[0]);
-            
-            $.ajax({
-                type: "post",
-                url: "<?php echo base_url('question/ajax_save/') ?>" + _key,
-                data: formData,
-                processData: false,
-                contentType: false,
-                beforeSend: function() {
-                    $('.spinner').show();
-                },
-                success: function(response) {
-                    var response = JSON.parse(response);
-                    if (response.status === true) {
+			var formData = new FormData();
+			formData.append('import_file', fileInput.files[0]);
+			formData.append('subject_id', subjectId);
+
+			// Disable button during import
+			$('#startImportBtn').prop('disabled', true).text('Mengimpor...');
+
+			$.ajax({
+				url: base_url + 'question/import_from_excel',
+				method: 'POST',
+				data: formData,
+				processData: false,
+				contentType: false,
+				success: function(response) {
+					var res = JSON.parse(response);
+
+					if (res.status) {
+						showNotification(res.data, 'success');
+						$('#importModal').modal('hide');
+						// Reload the table
+						$('#' + _table).DataTable().ajax.reload(null, false);
+					} else {
+						showNotification(res.data, 'error');
+					}
+
+					// Re-enable button
+					$('#startImportBtn').prop('disabled', false).text('Mulai Impor');
+				},
+				error: function(xhr, status, error) {
+					console.error('Import error:', error);
+					showNotification('Terjadi kesalahan saat mengimpor: ' + error, 'error');
+
+					// Re-enable button
+					$('#startImportBtn').prop('disabled', false).text('Mulai Impor');
+				}
+			});
+		});
+
+		// Function to show notification
+		function showNotification(message, type) {
+			// Using standard Bootstrap alert
+			var alertClass = 'alert-';
+			switch (type) {
+				case 'success':
+					alertClass += 'success';
+					break;
+				case 'error':
+					alertClass += 'danger';
+					break;
+				case 'warning':
+					alertClass += 'warning';
+					break;
+				default:
+					alertClass += 'info';
+			}
+
+			var alertHtml = '<div class="alert ' + alertClass + ' alert-dismissible fade show position-fixed" style="z-index: 9999; top: 20px; right: 20px;" role="alert">' +
+				message +
+				'<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+				'<span aria-hidden="true">&times;</span>' +
+				'</button>' +
+				'</div>';
+
+			$('body').append(alertHtml);
+
+			// Auto remove after 5 seconds
+			setTimeout(function() {
+				$('.alert').fadeOut('slow', function() {
+					$(this).remove();
+				});
+			}, 5000);
+		}
+
+		// Handle data edit
+		$("#" + _section).on("click", "button." + _section + "-action-edit", function(e) {
+			e.preventDefault();
+			var n = $(this).closest("tr").find('td:first').text() - 1;
+			var record = dt.rows(n).data()[0];
+
+			// Set current data
+			currentId = record.id;
+
+			// Load data to form
+			loadFormData(currentId);
+		});
+
+		// Handle save
+		$("." + _section + "-action-save").on("click", function(e) {
+			e.preventDefault();
+
+			// Jika menggunakan TinyMCE, pastikan konten disimpan ke textarea sebelum submit
+			if (typeof tinymce !== 'undefined' && tinymce.editors.length > 0) {
+				tinymce.triggerSave();
+			}
+
+			// Clean the content before saving
+			if (typeof tinymce !== 'undefined' && tinymce.editors.length > 0) {
+				for (var i = 0; i < tinymce.editors.length; i++) {
+					var editor = tinymce.editors[i];
+					var content = editor.getContent();
+					var cleanedContent = cleanLatexContent(content);
+					editor.setContent(cleanedContent);
+				}
+				tinymce.triggerSave();
+			}
+
+			// Gunakan FormData untuk mengirim data dan file
+			var formData = new FormData($(`#${_form}`)[0]);
+
+			$.ajax({
+				type: "post",
+				url: "<?php echo base_url('question/ajax_save/') ?>" + _key,
+				data: formData,
+				processData: false,
+				contentType: false,
+				beforeSend: function() {
+					$('.spinner').show();
+				},
+				success: function(response) {
+					var response = JSON.parse(response);
+					if (response.status === true) {
 						notify(response.data, 'success');
-                        // Redirect to question list after successful save
+						// Redirect to question list after successful save
 						setTimeout(function() {
 							window.location.href = "<?php echo base_url('question') ?>";
 						}, 1000);
-                    } else {
-                        notify(response.data, 'danger');
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error("Error:", xhr.responseText);
-                    notify('Terjadi kesalahan saat menyimpan data', 'danger');
-                },
-                complete: function() {
-                    $('.spinner').hide();
-                }
-            });
-        });
+					} else {
+						notify(response.data, 'danger');
+					}
+				},
+				error: function(xhr, status, error) {
+					console.error("Error:", xhr.responseText);
+					notify('Terjadi kesalahan saat menyimpan data', 'danger');
+				},
+				complete: function() {
+					$('.spinner').hide();
+				}
+			});
+		});
 
-        // Initialize TinyMCE if available with LaTeX support
-        if (typeof tinymce !== 'undefined') {
-            setTimeout(function() {
-                $('.tinymce-init').each(function() {
-                    if (!$(this).hasClass('tinymce-initialized')) {
-                        $(this).addClass('tinymce-initialized');
-                        
-                        // Use the global configuration with LaTeX support
-                        initializeTinyMCEWithLatex('#' + this.id);
-                    }
-                });
-            }, 500);
-        }
-        
-        // Function to refresh MathJax rendering
-        function initializeMathJax() {
-            if (typeof MathJax !== 'undefined') {
-                if (typeof MathJax.typeset === 'function') {
-                    MathJax.typeset();
-                } else if (typeof MathJax.Hub !== 'undefined') {
-                    MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
-                }
-            }
-        }
-        
-        // Handler untuk mengkonversi input sederhana ke format JSON
-        $('#expected_keywords_simple').on('input', function() {
-            var simpleInput = $(this).val();
-            if (simpleInput.trim() !== '') {
-                var lines = simpleInput.split('\n');
-                var keywords = [];
-                
-                for (var i = 0; i < lines.length; i++) {
-                    var line = lines[i].trim();
-                    if (line) {
-                        var parts = line.split('=');
-                        var word = parts[0].trim();
-                        var score = 1; // default score
-                        
-                        if (parts.length > 1) {
-                            score = parseInt(parts[1]) || 1;
-                        }
-                        
-                        keywords.push({"word": word, "score": score});
-                    }
-                }
-                
-                var jsonString = JSON.stringify(keywords);
-                $('#expected_keywords').val(jsonString);
-            }
-        });
-        
-        // Handler untuk mengisi input sederhana dari JSON jika ada
-        $('#expected_keywords').on('input', function() {
-            var jsonInput = $(this).val();
-            if (jsonInput.trim() !== '') {
-                try {
-                    var jsonObj = JSON.parse(jsonInput);
-                    if (Array.isArray(jsonObj)) {
-                        var simpleLines = [];
-                        for (var i = 0; i < jsonObj.length; i++) {
-                            simpleLines.push(jsonObj[i].word + '=' + jsonObj[i].score);
-                        }
-                        $('#expected_keywords_simple').val(simpleLines.join('\n'));
-                    }
-                } catch (e) {
-                    // Jika bukan format JSON yang valid, abaikan
-                }
-            } else {
-                $('#expected_keywords_simple').val('');
-            }
-        });
-        
-        // Panggil handler tipe soal dan tipe opsi untuk menyesuaikan tampilan saat halaman dimuat
-        if (_key) {
-            var currentType = $('.question-type').val();
-            var currentOptionType = $('.question-option_type').val();
-            
-            if (currentType === 'essay') {
-                $('#multiple-choice-section').hide();
-                $('#essay-section').show();
-            } else {
-                $('#multiple-choice-section').show();
-                $('#essay-section').hide();
-            }
-            
-            // Trigger change untuk menyesuaikan tampilan opsi
-            setTimeout(function() {
-                $('.question-option_type').trigger('change');
-            }, 500);
-        } else {
-            // Jika mode tambah baru, trigger change untuk tipe opsi default
-            setTimeout(function() {
-                $('.question-option_type').trigger('change');
-            }, 500);
-        }
-    });
-    
-    // Handler untuk mengganti tampilan berdasarkan jenis soal
-    $(document).ready(function() {
-        const questionTypeSelect = document.getElementById('question_type');
-        const mcSection = document.getElementById('multiple-choice-section');
-        const essaySection = document.getElementById('essay-section');
-          
-        if(questionTypeSelect) {
-            questionTypeSelect.addEventListener('change', function() {
-                if (this.value === 'essay') {
-                    mcSection.style.display = 'none';
-                    essaySection.style.display = 'block';
-                } else {
-                    mcSection.style.display = 'block';
-                    essaySection.style.display = 'none';
-                }
-                
-                // Refresh MathJax rendering after changing content
-                initializeMathJax();
-            });
-        }
+		// Initialize TinyMCE if available with LaTeX support
+		if (typeof tinymce !== 'undefined') {
+			setTimeout(function() {
+				$('.tinymce-init').each(function() {
+					if (!$(this).hasClass('tinymce-initialized')) {
+						$(this).addClass('tinymce-initialized');
 
-        // Initialize MathJax on page load
-        initializeMathJax();
-    });
-    
-    // Function to refresh MathJax rendering
-    function initializeMathJax() {
-        if (typeof MathJax !== 'undefined') {
-            if (typeof MathJax.typeset === 'function') {
-                MathJax.typeset();
-            } else if (typeof MathJax.Hub !== 'undefined') {
-                MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
-            }
-        }
-    }
+						// Use the global configuration with LaTeX support
+						initializeTinyMCEWithLatex('#' + this.id);
+					}
+				});
+			}, 500);
+		}
+
+		// Function to refresh MathJax rendering
+		function initializeMathJax() {
+			if (typeof MathJax !== 'undefined') {
+				if (typeof MathJax.typeset === 'function') {
+					MathJax.typeset();
+				} else if (typeof MathJax.Hub !== 'undefined') {
+					MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+				}
+			}
+		}
+
+		// Handler untuk mengkonversi input sederhana ke format JSON
+		$('#expected_keywords_simple').on('input', function() {
+			var simpleInput = $(this).val();
+			if (simpleInput.trim() !== '') {
+				var lines = simpleInput.split('\n');
+				var keywords = [];
+
+				for (var i = 0; i < lines.length; i++) {
+					var line = lines[i].trim();
+					if (line) {
+						var parts = line.split('=');
+						var word = parts[0].trim();
+						var score = 1; // default score
+
+						if (parts.length > 1) {
+							score = parseInt(parts[1]) || 1;
+						}
+
+						keywords.push({
+							"word": word,
+							"score": score
+						});
+					}
+				}
+
+				var jsonString = JSON.stringify(keywords);
+				$('#expected_keywords').val(jsonString);
+			}
+		});
+
+		// Handler untuk mengisi input sederhana dari JSON jika ada
+		$('#expected_keywords').on('input', function() {
+			var jsonInput = $(this).val();
+			if (jsonInput.trim() !== '') {
+				try {
+					var jsonObj = JSON.parse(jsonInput);
+					if (Array.isArray(jsonObj)) {
+						var simpleLines = [];
+						for (var i = 0; i < jsonObj.length; i++) {
+							simpleLines.push(jsonObj[i].word + '=' + jsonObj[i].score);
+						}
+						$('#expected_keywords_simple').val(simpleLines.join('\n'));
+					}
+				} catch (e) {
+					// Jika bukan format JSON yang valid, abaikan
+				}
+			} else {
+				$('#expected_keywords_simple').val('');
+			}
+		});
+
+		// Panggil handler tipe soal dan tipe opsi untuk menyesuaikan tampilan saat halaman dimuat
+		if (_key) {
+			var currentType = $('.question-type').val();
+			var currentOptionType = $('.question-option_type').val();
+
+			if (currentType === 'essay') {
+				$('#multiple-choice-section').hide();
+				$('#essay-section').show();
+			} else {
+				$('#multiple-choice-section').show();
+				$('#essay-section').hide();
+			}
+
+			// Trigger change untuk menyesuaikan tampilan opsi
+			setTimeout(function() {
+				$('.question-option_type').trigger('change');
+			}, 500);
+		} else {
+			// Jika mode tambah baru, trigger change untuk tipe opsi default
+			setTimeout(function() {
+				$('.question-option_type').trigger('change');
+			}, 500);
+		}
+	});
+
+	// Handler untuk mengganti tampilan berdasarkan jenis soal
+	$(document).ready(function() {
+		const questionTypeSelect = document.getElementById('question_type');
+		const mcSection = document.getElementById('multiple-choice-section');
+		const essaySection = document.getElementById('essay-section');
+
+		if (questionTypeSelect) {
+			questionTypeSelect.addEventListener('change', function() {
+				if (this.value === 'essay') {
+					mcSection.style.display = 'none';
+					essaySection.style.display = 'block';
+				} else {
+					mcSection.style.display = 'block';
+					essaySection.style.display = 'none';
+				}
+
+				// Refresh MathJax rendering after changing content
+				initializeMathJax();
+			});
+		}
+
+		// Initialize MathJax on page load
+		initializeMathJax();
+	});
+
+	// Function to refresh MathJax rendering
+	function initializeMathJax() {
+		if (typeof MathJax !== 'undefined') {
+			if (typeof MathJax.typeset === 'function') {
+				MathJax.typeset();
+			} else if (typeof MathJax.Hub !== 'undefined') {
+				MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+			}
+		}
+	}
 </script>

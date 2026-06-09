@@ -351,7 +351,7 @@
 							if (data === null) {
 								return `<img src="<?php echo base_url('/') ?>${row.question_image}" style="max-width: 100px; max-height: 100px;" />`;
 							} else {
-								// return data;
+								// Simply return the content as is, MathJax will be triggered after table draw
 								return data.length > 400 ? data.substr(0, 400) + '...' : data;
 							};
 						}
@@ -466,7 +466,7 @@
 					searchPlaceholder: "Cari...",
 					sProcessing: '<div style="text-align: center;"><div class="lds-ellipsis"><div></div><div></div><div></div><div></div></div></div>'
 				},
-				sDom: '<"dataTables_ct"><"dataTables__top"fb>rt<"dataTables__bottom"ip><"clear">',
+				// sDom: '<"dataTables_ct"><"dataTables__top"fb>rt<"dataTables__bottom"ip><"clear">',
 				buttons: [{
 					extend: "excelHtml5",
 					title: "Export Soal",
@@ -487,6 +487,19 @@
 						'</div>'
 					);
 				},
+				drawCallback: function(settings) {
+					// After table is drawn/updated, render MathJax for LaTeX content
+					if (typeof window.MathJax !== 'undefined') {
+						// For MathJax 3.x
+						if (typeof window.MathJax.typesetPromise !== 'undefined') {
+							window.MathJax.typesetPromise(['#' + _table]);
+						} 
+						// For MathJax 2.x
+						else if (typeof window.MathJax.Hub !== 'undefined') {
+							window.MathJax.Hub.Queue(["Typeset", window.MathJax.Hub, '#' + _table]);
+						}
+					}
+				}
 			});
 
 			$(".dataTables_filter input[type=search]").focus(function() {

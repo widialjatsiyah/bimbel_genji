@@ -129,7 +129,12 @@
                     </div>
 
                     <div class="form-group">
-                        <label required>Teks Soal</label>
+                       <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label required>Teks Soal</label>
+                            <a href="https://www.codecogs.com/latex/eqneditor.php" target="_blank" class="btn btn-sm btn-outline-primary">
+                                <i class="fa fa-calculator"></i> Online LaTeX Editor
+                            </a>
+                        </div>
                         <textarea id="question_text" name="question_text" class="form-control question-question_text tinymce-init" rows="4" placeholder="Tulis soal di sini..." required><?php echo htmlspecialchars($question_data->question_text); ?></textarea>
                         <i class="form-group__bar"></i>
                     </div>
