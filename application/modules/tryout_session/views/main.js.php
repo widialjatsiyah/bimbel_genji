@@ -9,6 +9,7 @@
         var _manageQuestionsModal = "modal-manage-questions";
         var _manageQuestionsForm = "form-manage-questions";
         var _questionsTable = "table-session-questions";
+        var table_session_questions; // Declare this variable globally so it's accessible in the delete handler
 
         // Initialize toggle visibility for time_per_question field
         $(document).on('change', 'input[name="enable_time_per_question"]', function() {
@@ -315,7 +316,7 @@
                 }
                 
                 // Initialize DataTable for session questions
-                var table_session_questions = $("#" + _questionsTable).DataTable({
+                table_session_questions = $("#" + _questionsTable).DataTable({
                     processing: true,
                     serverSide: false,
                     ajax: {
@@ -448,6 +449,7 @@
                 $("#" + _questionsTable).on("click", "a.action-delete-question", function(e) {
                     e.preventDefault();
                     var row_data = table_session_questions.row($(this).parents('tr')).data();
+                    var sessionId = $('#current_session_id').val(); // Get session ID from the hidden input field
                     
                     swal({
                         title: "Anda akan menghapus soal dari sesi ini, lanjutkan?",
