@@ -7,6 +7,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
         <div class="card">
             <div class="card-body">
                 <form id="form-question" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="tryout_session_id" id="tryout_session_id" value="" />
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">

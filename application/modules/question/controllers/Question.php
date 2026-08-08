@@ -19,7 +19,8 @@ class Question extends AppBackend
             'QuestionModel',
             'SubjectModel',
             'ChapterModel',
-            'TopicModel'
+            'TopicModel',
+			'TryoutSessionModel'
         ]);
         $this->load->library('form_validation');
     }
@@ -52,12 +53,18 @@ class Question extends AppBackend
         $subjects = $this->SubjectModel->getAll([], 'name', 'asc');
         $list_subject = $this->init_list($subjects, 'id', 'name');
         
+        $tryout_session_id = $this->input->get('tryout_session_id');
+		// if($tryout_session_id) {
+		// 	$tryout_session = $this->TryoutSessionModel->getDetail(['id' => $tryout_session_id]);
+		// }
+
         $data = [
             'app' => $this->app(),
             'main_js' => $this->load_main_js('question/views/main_form.js.php', true),
-            'card_title' => ($id) ? 'Ubah Soal' : 'Tambah Soal',
+            'card_title' => ($id) ? 'Ubah Soal' : ($tryout_session_id ? 'Tambah Soal Langsung ke Sesi' : 'Tambah Soal'),
             'list_subject' => $list_subject,
-            'question_data' => null
+            'question_data' => null,
+            'tryout_session' => $this->TryoutSessionModel->getDetail(['id' => $tryout_session_id])
         ];
         
         // If editing, get question data

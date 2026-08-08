@@ -406,7 +406,11 @@ class QuestionModel extends CI_Model
 			$this->min_keyword_matches = $this->input->post('min_keyword_matches') ?: 1;
 
 			$this->db->insert($this->_table, $this);
-			$response = array('status' => true, 'data' => 'Data soal berhasil disimpan.');
+			$response = array(
+				'status' => true,
+				'data' => 'Data soal berhasil disimpan.',
+				'id' => $this->db->insert_id()
+			);
 		} catch (\Throwable $th) {
 			$response = array('status' => false, 'data' => 'Gagal menyimpan data: ' . $th->getMessage());
 		}

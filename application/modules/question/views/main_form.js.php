@@ -538,11 +538,16 @@
 			}
 
 			// Gunakan FormData untuk mengirim data dan file
+			var sessionId = $('input[name="tryout_session_id"]').val();
 			var formData = new FormData($(`#${_form}`)[0]);
+			var saveUrl = "<?php echo base_url('question/ajax_save/') ?>" + _key;
+			if (! _key && sessionId) {
+				saveUrl = "<?php echo base_url('tryout_session/ajax_create_question_in_session') ?>";
+			}
 
 			$.ajax({
 				type: "post",
-				url: "<?php echo base_url('question/ajax_save/') ?>" + _key,
+				url: saveUrl,
 				data: formData,
 				processData: false,
 				contentType: false,
@@ -555,7 +560,11 @@
 						notify(response.data, 'success');
 						// Redirect to question list after successful save
 						setTimeout(function() {
-							window.location.href = "<?php echo base_url('question') ?>";
+							var redirectUrl = "<?php echo base_url('question') ?>";
+							if (sessionId) {
+								redirectUrl = "<?php echo base_url('tryout_session') ?>";
+							}
+							window.location.href = redirectUrl;
 						}, 1000);
 					} else {
 						notify(response.data, 'danger');
