@@ -101,7 +101,7 @@
 								Aksi
 							</button>
 							<ul class="dropdown-menu">
-								<li><a class="dropdown-item" href="#">Tambah Soal Langsung</a></li>
+								<li><a class="dropdown-item action-add-direct" href="javascript:;">Tambah Soal Langsung</a></li>
 								<li><a href="javascript:;" class="dropdown-item action-edit" data-toggle="modal" data-target="#`+ _modal + `"> Ubah</a></li>
 								<li style=" border-top:1px solid #ff0000;"><a href="javascript:;" class="dropdown-item action-delete"> Hapus</a></li>
 							</ul>
@@ -599,6 +599,16 @@
             $('#time_per_question_container').hide();
             $(`#${_form} .tryout_session-time_per_question`).val(60);
         };
+
+        $(document).on('click', 'a.action-add-direct', function(e) {
+            e.preventDefault();
+            var temp = table_tryout_session.row($(this).closest('tr')).data();
+            if (!temp || !temp.id) {
+                notify('Tryout Session tidak valid.', 'danger');
+                return;
+            }
+            window.location.href = '<?php echo base_url('question/form') ?>?tryout_session_id=' + temp.id;
+        });
 
     });
 </script>

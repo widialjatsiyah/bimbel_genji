@@ -12,7 +12,8 @@ class Tryout_session extends AppBackend
             'TryoutSessionModel',
             'TryoutModel',
             'TryoutQuestionModel',
-            'QuestionModel'
+            'QuestionModel',
+            'SubjectModel'
         ));
         $this->load->library('form_validation');
     }
@@ -23,11 +24,14 @@ class Tryout_session extends AppBackend
         $tryouts = $this->TryoutModel->getAll([], 'title', 'asc');
         $list_tryout = $this->init_list($tryouts, 'id', 'title');
 
+        $subjects = $this->SubjectModel->getAll([], 'name', 'asc');
+
         $data = array(
             'app' => $this->app(),
             'main_js' => $this->load_main_js('tryout_session'),
             'card_title' => 'Sesi Try Out',
-            'list_tryout' => $list_tryout
+            'list_tryout' => $list_tryout,
+            'subjects' => $subjects
         );
         $this->template->set('title', $data['card_title'] . ' | ' . $data['app']->app_name, TRUE);
         $this->template->load_view('index', $data, TRUE);
@@ -120,6 +124,102 @@ class Tryout_session extends AppBackend
         
         // Format data untuk DataTables
         echo json_encode($questions);
+    }
+
+    public function ajax_create_question_in_session()
+    {
+        $this->handle_ajax_request();
+
+        $tryout_session_id = $this->input->post('tryout_session_id');
+        if (!$tryout_session_id) {
+            echo json_encode(array('status' => false, 'data' => 'Tryout session tidak valid.'));
+            return;
+        }
+
+        $session = $this->TryoutSessionModel->getDetail(array('id' => $tryout_session_id));
+        if (!$session) {
+            echo json_encode(array('status' => false, 'data' => 'Tryout session tidak ditemukan.'));
+            return;
+        }
+
+        $question_type = $this->input->post('question_type') ?: 'multiple_choice';
+        $option_type = $this->input->post('option_type') ?: 'text';
+
+        if ($question_type === 'essay') {
+            $this->form_validation->set_rules($this->QuestionModel->rulesEssayOnly());
+        } else if ($option_type === 'image') {
+            $this->form_validation->set_rules($this->QuestionModel->rulesWithImage());
+        } else {
+            $this->form_validation->set_rules($this->QuestionModel->rules());
+        }
+
+        if ($this->form_validation->run() === false) {
+            $errors = validation_errors('<div>- ', '</div>');
+            echo json_encode(array('status' => false, 'data' => $errors));
+            return;
+        }
+
+        $this->load->library('CpUpload');
+
+        $imageFields = array(
+            'question_image_file' => 'question_image',
+            'option_a_image_file' => 'option_a_image',
+            'option_b_image_file' => 'option_b_image',
+            'option_c_image_file' => 'option_c_image',
+            'option_d_image_file' => 'option_d_image',
+            'option_e_image_file' => 'option_e_image'
+        );
+
+        foreach ($imageFields as $fieldName => $key) {
+            $upload = $this->QuestionModel->handleImageUpload($fieldName, $key, 'questions');
+            if (!$upload['status']) {
+                if ($upload['data'] !== 'No file uploaded.') {
+                    echo json_encode(array('status' => false, 'data' => $upload['data']));
+                    return;
+                }
+                $_POST[$key] = $this->input->post($key) ?: null;
+            } else {
+                $_POST[$key] = $upload['data']->base_path;
+            }
+        }
+
+        $this->db->trans_begin();
+
+        $questionResult = $this->QuestionModel->insert();
+        if (!$questionResult['status']) {
+            $this->db->trans_rollback();
+            echo json_encode(array('status' => false, 'data' => $questionResult['data']));
+            return;
+        }
+
+        $question_id = isset($questionResult['id']) ? $questionResult['id'] : $this->db->insert_id();
+
+        if ($this->TryoutQuestionModel->questionExistsInSession($tryout_session_id, $question_id)) {
+            $this->db->trans_rollback();
+            echo json_encode(array('status' => false, 'data' => 'Soal sudah terdapat pada Tryout Session.'));
+            return;
+        }
+
+        $_POST['tryout_session_id'] = $tryout_session_id;
+        $_POST['question_id'] = $question_id;
+        $_POST['question_order'] = $this->TryoutQuestionModel->getMaxQuestionOrder($tryout_session_id) + 1;
+        $_POST['points'] = 1.00;
+
+        $relationResult = $this->TryoutQuestionModel->insert();
+        if (!$relationResult['status']) {
+            $this->db->trans_rollback();
+            echo json_encode(array('status' => false, 'data' => $relationResult['data']));
+            return;
+        }
+
+        if ($this->db->trans_status() === false) {
+            $this->db->trans_rollback();
+            echo json_encode(array('status' => false, 'data' => 'Gagal menyimpan soal ke Tryout Session.'));
+            return;
+        }
+
+        $this->db->trans_commit();
+        echo json_encode(array('status' => true, 'data' => 'Soal berhasil dibuat dan ditambahkan ke Tryout Session.'));
     }
     
     public function ajax_get_questions_not_in_session()

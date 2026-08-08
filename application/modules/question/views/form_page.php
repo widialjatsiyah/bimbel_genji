@@ -7,6 +7,12 @@
                 <form id="form-question" autocomplete="off">
                     <!-- CSRF -->
                     <input type="hidden" name="<?php echo $this->security->get_csrf_token_name(); ?>" value="<?php echo $this->security->get_csrf_hash(); ?>" />
+                    <input type="hidden" name="tryout_session_id" id="tryout_session_id" value="<?= isset($tryout_session) ? htmlspecialchars($tryout_session->id) : '' ?>" />
+                    <?php if (isset($tryout_session) && $tryout_session): ?>
+                        <div class="alert alert-info">
+                            Soal baru akan otomatis ditambahkan ke Tryout Session ID: <strong><?= htmlspecialchars($tryout_session->name) ?></strong>.
+                        </div>
+                    <?php endif; ?>
                     <?php if(isset($question_data) && $question_data): ?>
                     <input type="hidden" name="id" value="<?=$question_data->id?>" />
                     <?php endif; ?>
