@@ -5,7 +5,8 @@ $currentKey = ($this->router->fetch_class() == 'search' && isset($_GET['q'])) ? 
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id" translate="no">
+
 
 <head>
     <meta charset="utf-8" />
@@ -13,6 +14,8 @@ $currentKey = ($this->router->fetch_class() == 'search' && isset($_GET['q'])) ? 
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <meta name="description" content="Generasi Jenius" />
     <meta name="author" content="GENJI | Widi Aljatsiyah" />
+
+    <meta name="google" content="notranslate">
 
     <title>{title}</title>
 
@@ -44,7 +47,7 @@ $currentKey = ($this->router->fetch_class() == 'search' && isset($_GET['q'])) ? 
     <link rel="stylesheet" href="<?php echo base_url('themes/_public/css/material-effect.css') ?>">
 </head>
 
-<body class="nav-fixed">
+<body class="nav-fixed" translate="no">
     <nav class="topnav navbar navbar-expand shadow justify-content-between justify-content-sm-start navbar-light bg-white" id="sidenavAccordion">
         <!-- Sidenav Toggle Button-->
         <button class="btn btn-icon btn-transparent-dark order-1 order-lg-0 me-2 ms-lg-2 me-lg-0" id="sidebarToggle"><i data-feather="menu"></i></button>

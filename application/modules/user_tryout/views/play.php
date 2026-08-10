@@ -1,9 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id" translate="no">
 
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	 <meta name="google" content="notranslate">
+
 	<title><?= isset($session) && $session ? $session->name : 'Try Out' ?> - Try Out</title>
 	<!-- Bootstrap 5 CSS -->
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -259,7 +261,7 @@
 	</style>
 </head>
 
-<body>
+<body class="notranslate">
 	<div class="timer-container">
 		<div class="container">
 			<div class="row align-items-center">
