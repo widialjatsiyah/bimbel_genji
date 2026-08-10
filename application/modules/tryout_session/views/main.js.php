@@ -187,9 +187,10 @@
                 width: '100%',
                 placeholder: $('#question_select').attr('data-placeholder'),
                 allowClear: true,
+				minimumInputLength: 3, // Set minimum input length to 1
                 ajax: {
                     url: "<?php echo base_url('tryout_session/ajax_get_questions_not_in_session'); ?>",
-                    delay: 250,
+                    delay: 500,
                     type: 'GET', // Tambahkan tipe request
                     data: function(params) {
                         return {
