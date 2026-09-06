@@ -5,17 +5,20 @@ defined('BASEPATH') or exit('No direct script access allowed');
 <html lang="en">
 
 <head>
-
 	<meta charset="utf-8">
 	<title><?= $page_title ?></title>
 	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
+	<!-- Vendor styles -->
 	<link rel="stylesheet" href="<?= base_url('themes/material_admin/vendors/material-design-iconic-font/css/material-design-iconic-font.min.css') ?>">
 	<link rel="stylesheet" href="<?= base_url('themes/material_admin/vendors/animate.css/animate.min.css') ?>">
+
+	<!-- App styles -->
 	<link rel="stylesheet" href="<?= base_url('themes/material_admin/css/app.min.css') ?>">
+	<link rel="stylesheet" href="<?= base_url('themes/_public/css/material-effect.css') ?>">
 	<link rel="stylesheet" href="<?= base_url('themes/_public/css/public.main.css') ?>">
 
-	<style>
+	<style type="text/css">
 		.login__block {
 			max-width: 520px;
 			margin: auto;
@@ -56,7 +59,6 @@ defined('BASEPATH') or exit('No direct script access allowed');
 			margin-bottom: 20px;
 		}
 	</style>
-
 </head>
 
 <body data-ma-theme="<?= $app->theme_color ?>">
@@ -67,7 +69,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 			<div class="login__block__header text-center">
 
-				<img src="<?= base_url('directory/settings/7f7ac8b44baa13fb617017560d17f87a.jpg') ?>" style="height:60px">
+				<img src="<?= base_url('directory/settings/7f7ac8b44baa13fb617017560d17f87a.jpg') ?>" style="height:60px;border-radius:10%;">
 
 				<br>
 
@@ -132,29 +134,19 @@ defined('BASEPATH') or exit('No direct script access allowed');
 						</div>
 
 						<div class="form-group form-group--float">
-
-							<select name="pilihan_kampus1" class="form-control">
-
+							<select name="pilihan_kampus1" class="form-control form-control--active">
 								<?= $list_universitas ?>
-
 							</select>
-
 							<label>Pilihan Kampus 1</label>
 							<i class="form-group__bar"></i>
-
 						</div>
 
 						<div class="form-group form-group--float">
-
-							<select name="pilihan_kampus2" class="form-control">
-
+							<select name="pilihan_kampus2" class="form-control form-control--active">
 								<?= $list_universitas ?>
-
 							</select>
-
 							<label>Pilihan Kampus 2</label>
 							<i class="form-group__bar"></i>
-
 						</div>
 
 					</div>
@@ -285,7 +277,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 						Daftar Sekarang
 
-						<i class="zmdi zmdi-arrow-right"></i>
+						<i class="zmdi zmdi-long-arrow-right"></i>
 
 					</button>
 
@@ -310,22 +302,29 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 			</div>
 
+			<div style="border-top: 1px solid #eceff1; padding: 20px 10px; color: #999;" class="bg-light mt-4">
+				&copy; Generasi Jenius <?= date('Y') ?>. All rights reserved.
+			</div>
+
 		</div>
 
 	</div>
 
+	<!-- Javascript -->
+	<script src="<?= base_url('themes/material_admin/vendors/jquery/jquery.min.js') ?>"></script>
+	<script src="<?= base_url('themes/material_admin/vendors/popper.js/popper.min.js') ?>"></script>
+	<script src="<?= base_url('themes/material_admin/vendors/bootstrap/js/bootstrap.min.js') ?>"></script>
+	<script src="<?= base_url('themes/material_admin/vendors/bootstrap-notify/bootstrap-notify.min.js') ?>"></script>
 
-<script src="<?= base_url('themes/material_admin/vendors/jquery/jquery.min.js') ?>"></script>
-<script src="<?= base_url('themes/material_admin/vendors/bootstrap/js/bootstrap.min.js') ?>"></script>
+	<!-- App functions and actions -->
+	<script src="<?= base_url('themes/material_admin/js/app.min.js') ?>"></script>
+	<script src="<?= base_url('themes/_public/js/material-effect.js') ?>"></script>
 
-
-
-<script>
-
-  function notify(nMessage, nType) {
-      $.notify({
-        message: nMessage
-      }, {
+	<script type="text/javascript">
+		function notify(nMessage, nType) {
+			$.notify({
+				message: nMessage
+			}, {
         type: nType,
         z_index: 9999,
         delay: 2500,
@@ -348,126 +347,53 @@ defined('BASEPATH') or exit('No direct script access allowed');
       };
     });
 
-    // Toggle password visibility
-    $(document).ready(function() {
-      $('#togglePassword').click(function() {
-        var passwordInput = $('.login-password');
-        var icon = $(this);
-        
-        if (passwordInput.attr('type') === 'password') {
-          passwordInput.attr('type', 'text');
-          icon.removeClass('zmdi-eye').addClass('zmdi-eye-off');
-          icon.attr('title', 'Hide password');
-        } else {
-          passwordInput.attr('type', 'password');
-          icon.removeClass('zmdi-eye-off').addClass('zmdi-eye');
-          icon.attr('title', 'Show password');
-        }
-      });
-    });
-		
-$('.password-toggle').click(function(){
-
-var input = $($(this).data('target'));
-
-if(input.attr('type') == 'password'){
-input.attr('type','text');
-}else{
-input.attr('type','password');
-}
-
-});
+		// Toggle password visibility
+		$('.password-toggle').click(function() {
+			var input = $($(this).data('target'));
+			var icon = $(this).find('i');
+			if (input.attr('type') == 'password') {
+				input.attr('type', 'text');
+				icon.removeClass('zmdi-eye').addClass('zmdi-eye-off');
+			} else {
+				input.attr('type', 'password');
+				icon.removeClass('zmdi-eye-off').addClass('zmdi-eye');
+			}
+		});
 
 
 
-$('#password').on('input',function(){
-
-var password=$(this).val();
-
-var score=0;
-
-if(password.length>7) score+=25;
-if(/[A-Z]/.test(password)) score+=25;
-if(/[0-9]/.test(password)) score+=25;
-if(/[^A-Za-z0-9]/.test(password)) score+=25;
-
-$('#password-strength-bar').css('width',score+'%');
-
-if(score<50){
-$('#password-strength-bar').css('background','#e74c3c');
-}
-else if(score<75){
-$('#password-strength-bar').css('background','#f1c40f');
-}
-else{
-$('#password-strength-bar').css('background','#2ecc71');
-}
-
-});
+		// Password strength
+		$('#password').on('input', function() {
+			var password = $(this).val();
+			var score = 0;
+			if (password.length > 7) score += 25;
+			if (/[A-Z]/.test(password)) score += 25;
+			if (/[0-9]/.test(password)) score += 25;
+			if (/[^A-Za-z0-9]/.test(password)) score += 25;
+			$('#password-strength-bar').css('width', score + '%');
+			if (score < 50) {
+				$('#password-strength-bar').css('background', '#e74c3c');
+			} else if (score < 75) {
+				$('#password-strength-bar').css('background', '#f1c40f');
+			} else {
+				$('#password-strength-bar').css('background', '#2ecc71');
+			}
+		});
 
 
 
-$('#password_confirm').on('keyup',function(){
+		// Password confirm match
+		$('#password_confirm').on('keyup', function() {
+			if ($('#password').val() != $(this).val()) {
+				$(this).css('border-color', '#e74c3c');
+			} else {
+				$(this).css('border-color', '#2ecc71');
+			}
+		});
+	</script>
 
-if($('#password').val()!= $(this).val()){
-
-$(this).css('border-color','#e74c3c');
-
-}else{
-
-$(this).css('border-color','#2ecc71');
-
-}
-
-});
-
-</script>
+	<?php echo (isset($main_js)) ? $main_js : '' ?>
 
 </body>
+
 </html>
-
-<script type="text/javascript">
-  $(document).ready(function() {
-
-    var _form = "form-register";
-
-    // Handle ajax start
-    $(document).ajaxStart(function() {
-      $(".spinner").css("display", "flex");
-    });
-
-    // Handle ajax stop
-    $(document).ajaxStop(function() {
-      $(".spinner").hide();
-    });
-
-    // Handle data submit
-    $("#" + _form + " .page-action-register").on("click", function(e) {
-      e.preventDefault();
-
-      var form = $("#" + _form)[0];
-      var data = new FormData(form);
-
-      $.ajax({
-        type: "post",
-        url: "<?php echo base_url('register/ajax_submit/') ?>",
-        data: data,
-        dataType: "json",
-        enctype: "multipart/form-data",
-        processData: false,
-        contentType: false,
-        cache: false,
-        success: function(response) {
-          if (response.status === true) {
-            notify(response.data, "success");
-            window.location.href = "<?php echo base_url('select_package') ?>";
-          } else {
-            notify(response.data, "danger");
-          };
-        }
-      });
-      return false;
-    });
-
-  });
-</script>

@@ -6,6 +6,8 @@
         var _table = "table-user_package";
         var _modal = "modal-form-user_package";
         var _form = "form-user_package";
+        var reviewTransactionId = null;
+        var reviewProofUrl = null;
 
         // Initialize DataTables
         if ($("#" + _table)[0]) {
@@ -59,10 +61,14 @@
                     {
                         data: null,
                         className: "center",
-                        defaultContent: '<div class="action">' +
-                            '<a href="javascript:;" class="btn btn-sm btn-light btn-table-action action-edit" data-toggle="modal" data-target="#' + _modal + '"><i class="zmdi zmdi-edit"></i> Ubah</a>&nbsp;' +
-                            '<a href="javascript:;" class="btn btn-sm btn-danger btn-table-action action-delete"><i class="zmdi zmdi-delete"></i> Hapus</a>' +
-                            '</div>'
+                        render: function(data, type, row) {
+                            var action = '<div class="action">' +
+                                '<a href="javascript:;" class="btn btn-sm btn-light btn-table-action action-edit" data-toggle="modal" data-target="#' + _modal + '"><i class="zmdi zmdi-edit"></i> Ubah</a>&nbsp;';
+                            if (row.manual_proof) {
+                                action += '<button type="button" class="btn btn-sm btn-info action-view-proof" data-id="' + row.transaction_id + '" data-proof="' + encodeURIComponent(row.manual_proof) + '" data-user="' + $('<div>').text(row.user_name).html() + '" data-package="' + $('<div>').text(row.package_name).html() + '" data-note="' + $('<div>').text(row.manual_note || '-').html() + '"><i class="zmdi zmdi-image"></i> Bukti</button>&nbsp;';
+                            }
+                            return action + '<a href="javascript:;" class="btn btn-sm btn-danger btn-table-action action-delete"><i class="zmdi zmdi-delete"></i> Hapus</a></div>';
+                        }
                     }
                 ],
                 autoWidth: !1,
@@ -210,6 +216,61 @@
                         }
                     });
                 };
+            });
+        });
+
+        $("#" + _table).on("click", ".action-verify-manual", function() {
+            var transactionId = $(this).data('id');
+            var decision = $(this).data('decision');
+            var label = decision === 'approve' ? 'menyetujui' : 'menolak';
+            if (!transactionId || !confirm('Yakin ingin ' + label + ' bukti pembayaran ini?')) return;
+            $.ajax({
+                type: 'post',
+                url: '<?= base_url('user_package/ajax_verify_manual/') ?>' + transactionId + '/' + decision,
+                data: {
+                    '<?= $this->security->get_csrf_token_name() ?>': '<?= $this->security->get_csrf_hash() ?>'
+                },
+                dataType: 'json',
+                success: function(response) {
+                    alert(response.data);
+                    if (response.status) $('#' + _table).DataTable().ajax.reload(null, false);
+                },
+                error: function() { alert('Gagal memproses verifikasi pembayaran.'); }
+            });
+        });
+
+        $("#" + _table).on("click", ".action-view-proof", function() {
+            var button = $(this);
+            reviewTransactionId = button.data('id');
+            reviewProofUrl = "<?= base_url('uploads/payment_proofs/') ?>" + button.data('proof');
+            $("#proof-review-user").text(button.data('user'));
+            $("#proof-review-package").text(button.data('package'));
+            $("#proof-review-note").text(button.data('note') || '-');
+            var extension = String(button.data('proof')).toLowerCase().split('.').pop();
+            if (extension === 'jpg' || extension === 'jpeg' || extension === 'png') {
+                $("#proof-review-preview").html('<img src="' + reviewProofUrl + '" alt="Bukti pembayaran" style="max-width:100%; max-height:520px;">');
+            } else {
+                $("#proof-review-preview").html('<a class="btn btn-info" target="_blank" href="' + reviewProofUrl + '"><i class="zmdi zmdi-file-text"></i> Buka file bukti</a>');
+            }
+            $("#modal-payment-proof-review").modal('show');
+        });
+
+        $("#modal-payment-proof-review").on("click", ".action-review-decision", function() {
+            var decision = $(this).data('decision');
+            if (!reviewTransactionId || !confirm(decision === 'approve' ? 'Terima bukti pembayaran ini?' : 'Tolak bukti pembayaran ini?')) return;
+            $.ajax({
+                type: 'post',
+                url: '<?= base_url('user_package/ajax_verify_manual/') ?>' + reviewTransactionId + '/' + decision,
+                data: {'<?= $this->security->get_csrf_token_name() ?>': '<?= $this->security->get_csrf_hash() ?>'},
+                dataType: 'json',
+                success: function(response) {
+                    alert(response.data);
+                    if (response.status) {
+                        $("#modal-payment-proof-review").modal('hide');
+                        $("#" + _table).DataTable().ajax.reload(null, false);
+                    }
+                },
+                error: function() { alert('Gagal memproses verifikasi.'); }
             });
         });
 

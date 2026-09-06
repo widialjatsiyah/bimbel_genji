@@ -33,7 +33,7 @@ class TransactionModel extends CI_Model
 
 	public function update($order_id, $data)
 	{
-		$this->db->where('order_id', $order_id)->update($this->_table, $data);
+		return $this->db->where('order_id', $order_id)->update($this->_table, $data);
 	}
 
 	public function getUserTransactions($user_id)

@@ -236,4 +236,73 @@ class Payment extends AppBackend
 			echo json_encode(['status' => false, 'message' => $e->getMessage()]);
 		}
 	}
+
+	public function upload_manual_proof($order_id)
+	{
+		$this->handle_ajax_request();
+		$user = $this->session->userdata('user');
+		$transaction = $this->TransactionModel->getByOrderId($order_id);
+		if (!$transaction || (int) $transaction->user_id !== (int) $user['id']) {
+			echo json_encode(['status' => false, 'data' => 'Transaksi tidak ditemukan.']);
+			return;
+		}
+		if ($transaction->manual_verification_status === 'approved' || $transaction->transaction_status === 'settlement') {
+			echo json_encode(['status' => false, 'data' => 'Transaksi ini sudah dibayar.']);
+			return;
+		}
+
+		$this->load->library('upload');
+		$upload_path = './uploads/payment_proofs/';
+		if (!is_dir($upload_path)) {
+			mkdir($upload_path, 0755, true);
+		}
+		$this->upload->initialize([
+			'upload_path' => $upload_path,
+			'allowed_types' => 'jpg|jpeg|png|pdf',
+			'max_size' => '4096',
+			'file_ext_tolower' => true,
+			'encrypt_name' => true,
+		]);
+		if (!$this->upload->do_upload('payment_proof')) {
+			echo json_encode(['status' => false, 'data' => $this->upload->display_errors()]);
+			return;
+		}
+
+		$file = $this->upload->data();
+		$old_file = $transaction->manual_proof ? $upload_path . $transaction->manual_proof : null;
+		$updated = $this->TransactionModel->update($order_id, [
+			'payment_type' => 'manual',
+			'manual_proof' => $file['file_name'],
+			'manual_note' => trim((string) $this->input->post('manual_note')),
+			'manual_verification_status' => 'pending',
+			'manual_verified_by' => null,
+			'manual_verified_at' => null,
+			'transaction_status' => 'pending',
+		]);
+		if ($updated) {
+			$package = $this->PackageModel->getDetail(['id' => $transaction->package_id]);
+			$existing_package = $this->UserPackageModel->getDetail([
+				'user_id' => $transaction->user_id,
+				'package_id' => $transaction->package_id,
+			]);
+			if (!$existing_package && $package) {
+				$start_date = date('Y-m-d');
+				$end_date = (int) $package->duration_days > 0
+					? date('Y-m-d', strtotime('+' . (int) $package->duration_days . ' days'))
+					: '2099-12-31';
+				$this->db->insert('user_packages', [
+					'user_id' => $transaction->user_id,
+					'package_id' => $transaction->package_id,
+					'start_date' => $start_date,
+					'end_date' => $end_date,
+					'status' => 'cancelled',
+					'payment_status' => 'pending',
+				]);
+			}
+		}
+		if ($old_file && file_exists($old_file)) {
+			unlink($old_file);
+		}
+		echo json_encode(['status' => (bool) $updated, 'data' => $updated ? 'Bukti pembayaran berhasil dikirim dan menunggu verifikasi admin.' : 'Gagal menyimpan bukti pembayaran.']);
+	}
 }

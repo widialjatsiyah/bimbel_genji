@@ -22,7 +22,7 @@
                     </div>
                     <div class="form-group">
                         <label>Password</label>
-                        <input type="password" name="password" class="form-control student-password" <?= isset($is_edit) ? '' : 'required' ?>>
+                        <input type="password" name="password" class="form-control student-password">
                         <small class="text-muted">Kosongkan jika tidak ingin mengubah</small>
                     </div>
                     <?php if($this->session->userdata('user')['role'] == 'Administrator'): ?>
@@ -35,19 +35,21 @@
                             <?php endforeach; ?>
                         </select>
                     </div>
+                    <?php endif; ?>
+                    <?php if(in_array($this->session->userdata('user')['role'], ['Administrator', 'school_admin'])): ?>
                     <div class="form-group">
                         <label>Sub Sekolah</label>
                         <select name="sub_unit" class="form-control select2 student-sub_unit">
                             <option value="">Pilih Sub Sekolah</option>
                             <?php foreach($this->SubunitModel->getAll() as $subunit): ?>
-                                <option value="<?= $subunit->id ?>"><?= $subunit->name ?></option>
+                                <option value="<?= html_escape($subunit->nama_sub_unit) ?>"><?= html_escape($subunit->nama_sub_unit) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
                     <?php endif; ?>
                     <div class="form-check">
                         <label class="form-check-label">
-                            <input type="checkbox" name="is_active" class="form-check-input student-is_active" checked>
+                            <input type="checkbox" name="is_active" class="form-check-input student-is_active" checked value="1">
                             <span class="form-check-sign"></span>
                             <span>Aktif</span>
                         </label>

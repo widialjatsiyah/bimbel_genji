@@ -1,4 +1,4 @@
-<script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="<?= $client_keys?>"></script>
+<script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="<?= isset($client_keys) ? $client_keys : '' ?>"></script>
 <script type="text/javascript">
 	$(document).ready(function() {
 
@@ -34,14 +34,39 @@
 						}
 					},
 					{
+						data: "created_at",
+						render: function(data) {
+							return data ? data : '-';
+						}
+					},
+					{
+						data: "payment_type",
+						render: function(data) {
+							return data === 'manual' ? 'Manual' : 'Midtrans';
+						}
+					},
+					{
 						data: "transaction_status",
 						render: function(data) {
 							var badge = {
-								'active': 'success',
+								'pending': 'warning',
+								'settlement': 'success',
+								'capture': 'success',
+								'cancel': 'danger',
+								'cancelled': 'danger',
+								'expire': 'secondary',
 								'expired': 'secondary',
-								'cancelled': 'danger'
+								'deny': 'danger'
 							};
-							return '<span class="badge bg-' + (badge[data] || 'info') + '">' + data + '</span>';
+							return '<span class="badge bg-' + (badge[data] || 'info') + '">' + (data || '-') + '</span>';
+						}
+					},
+					{
+						data: "manual_verification_status",
+						render: function(data, type, row) {
+							if (row.payment_type !== 'manual') return '-';
+							var labels = {pending: 'Menunggu Verifikasi', approved: 'Terverifikasi', rejected: 'Ditolak'};
+							return '<span class="badge bg-info">' + (labels[data] || 'Menunggu Verifikasi') + '</span>';
 						}
 					},
 					{
@@ -53,7 +78,11 @@
 					{
 						data: null,
 						render: function(data, type, row) {
-							if (row.transaction_status == 'pending') {
+							if (row.payment_type === 'manual') {
+								var proofButton = row.manual_proof ? '<button class="btn btn-sm btn-info btn-view-manual-proof" data-order="' + row.order_id + '" data-proof="' + encodeURIComponent(row.manual_proof) + '">Lihat Bukti</button> ' : '';
+								var uploadButton = row.manual_verification_status === 'approved' ? '' : '<button class="btn btn-sm btn-success btn-manual-proof" data-order="' + row.order_id + '">' + (row.manual_proof ? 'Upload Ulang' : 'Upload Bukti') + '</button>';
+								return proofButton + uploadButton;
+							} else if (row.transaction_status == 'pending') {
 								return '<button class="btn btn-sm btn-primary btn-pay" data-order="' + row.order_id + '">Lanjutkan Pembayaran</button>';
 							} else {
 								return '-';
@@ -83,10 +112,10 @@
 				},
 				columnDefs: [{
 					className: 'desktop',
-					targets: [0, 1, 2, 3, 4]
+					targets: [0, 1, 2, 3, 4, 5, 6]
 				}, {
 					className: 'tablet',
-					targets: [0, 1, 2, 3, 4]
+					targets: [0, 1, 2, 3, 4, 5, 6]
 				}, {
 					className: 'mobile',
 					targets: [0, 1]
@@ -153,6 +182,64 @@
 					alert(res.message);
 				}
 			}, 'json');
+		});
+
+		$(document).on('click', '.btn-manual-proof', function() {
+			var orderId = $(this).data('order');
+			$('#manual-payment-order-id').val(orderId);
+			$('#manual-payment-order').text(orderId);
+			$('#manual-payment-proof').val('');
+			$('#manual-payment-note').val('');
+			$('#manual-payment-existing-proof').addClass('d-none').empty();
+			$('#modal-manual-payment').modal('show');
+		});
+
+		$(document).on('click', '.btn-view-manual-proof', function() {
+			var rawProof = decodeURIComponent($(this).data('proof'));
+			var proofUrl = '<?= base_url('uploads/payment_proofs/') ?>' + rawProof;
+			var orderId = $(this).data('order');
+			$('#manual-payment-order-id').val(orderId);
+			$('#manual-payment-order').text(orderId);
+			$('#manual-payment-proof').val('');
+			$('#manual-payment-note').val('');
+			var extension = String(rawProof).toLowerCase().split('.').pop();
+			if (extension === 'jpg' || extension === 'jpeg' || extension === 'png') {
+				$('#manual-payment-existing-proof').html('<img src="' + proofUrl + '" alt="Bukti pembayaran" style="max-width:100%; max-height:280px;">').removeClass('d-none');
+			} else {
+				$('#manual-payment-existing-proof').html('<a target="_blank" href="' + proofUrl + '">Buka file bukti</a>').removeClass('d-none');
+			}
+			$('#modal-manual-payment').modal('show');
+		});
+
+		$('#manual-payment-submit').on('click', function() {
+			var fileInput = $('#manual-payment-proof')[0];
+			if (!fileInput.files.length) {
+				alert('Pilih bukti pembayaran terlebih dahulu.');
+				return;
+			}
+			var formData = new FormData();
+			formData.append('payment_proof', fileInput.files[0]);
+			formData.append('manual_note', $('#manual-payment-note').val());
+			formData.append('<?= $this->security->get_csrf_token_name() ?>', '<?= $this->security->get_csrf_hash() ?>');
+			var button = $(this);
+			button.prop('disabled', true).text('Mengirim...');
+			$.ajax({
+				url: '<?= base_url('payment/upload_manual_proof/') ?>' + $('#manual-payment-order-id').val(),
+				type: 'post',
+				data: formData,
+				processData: false,
+				contentType: false,
+				dataType: 'json',
+				success: function(response) {
+					if (response.status) {
+						$('#modal-manual-payment').modal('hide');
+						$('#' + _table).DataTable().ajax.reload(null, false);
+					}
+					alert(response.data);
+				},
+				error: function() { alert('Gagal mengirim bukti pembayaran.'); },
+				complete: function() { button.prop('disabled', false).text('Kirim Bukti'); }
+			});
 		});
 
 		// Helper number_format

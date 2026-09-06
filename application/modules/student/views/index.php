@@ -4,6 +4,7 @@
     width: 100% !important;
 }
 </style>
+<?php $card_title = isset($card_title) ? $card_title : 'Manajemen Siswa'; ?>
 
 <section id="student">
     <div class="card">
@@ -13,9 +14,39 @@
                 <button class="btn btn-primary btn--icon-text student-action-add" data-toggle="modal" data-target="#modal-form-student">
                     <i class="zmdi zmdi-plus-circle"></i> Tambah Siswa
                 </button>
+                <button class="btn btn-success btn--icon-text" id="btn-import-excel">
+                    <i class="zmdi zmdi-upload"></i> Import Excel
+                </button>
+                <a href="<?= base_url('student/download_template') ?>" class="btn btn-light btn--icon-text" id="btn-download-template">
+                    <i class="zmdi zmdi-download"></i> Download Template
+                </a>
             </div>
             <?php include_once('form.php') ?>
             <?php include_once('manage_class_modal.php') ?>
+            <!-- Modal Import Excel -->
+            <div class="modal fade" id="modal-import-student" data-backdrop="static">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Import Siswa dari Excel</h5>
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-info">
+                                <small>Format kolom: <b>A</b>=Nama Lengkap, <b>B</b>=Email, <b>C</b>=Username, <b>D</b>=Password (default 123456 jika kosong), <b>E</b>=Sekolah/Unit (opsional), <b>F</b>=Sub Sekolah (opsional), <b>G</b>=Aktif (1/0), <b>H</b>=NIS, <b>I</b>=Asal Sekolah, <b>J</b>=Nama Orang Tua, <b>K</b>=Kontak Orang Tua. Baris 1 header. Detail siswa otomatis dibuat memakai user_id hasil import.</small>
+                            </div>
+                            <div class="form-group">
+                                <label>Pilih File Excel (.xlsx/.xls)</label>
+                                <input type="file" id="import_file" name="import_file" class="form-control" accept=".xlsx,.xls">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-success" id="btn-do-import">Import</button>
+                            <button type="button" class="btn btn-light" data-dismiss="modal">Batal</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div class="table-responsive">
                 <table id="table-student" class="table table-bordered">
                     <thead>

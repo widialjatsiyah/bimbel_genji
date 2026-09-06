@@ -127,12 +127,13 @@ main.js.php
 
             $.get("<?= base_url('student/ajax_get_detail/') ?>" + id, function(data) {
                 if (data) {
-                    $("#form-" + _section + " .student-username").val(data.username);
-                    $("#form-" + _section + " .student-email").val(data.email);
-                    $("#form-" + _section + " .student-nama_lengkap").val(data.nama_lengkap);
-                    $("#form-" + _section + " .student-unit").val(data.unit).trigger('change');
-                    $("#form-" + _section + " .student-sub_unit").val(data.sub_unit).trigger('change');
-                    $("#form-" + _section + " .student-is_active").prop('checked', data.is_active == '1');
+                    $("#" + _form + " .student-username").val(data.username);
+                    $("#" + _form + " .student-email").val(data.email);
+                    $("#" + _form + " .student-nama_lengkap").val(data.nama_lengkap);
+                    $("#" + _form + " .student-unit").val(data.unit).trigger('change');
+                    $("#" + _form + " .student-sub_unit").val(data.sub_unit).trigger('change');
+                    $("#" + _form + " .student-is_active").prop('checked', data.is_active == '1');
+                    $("#" + _form + " .student-password").val('');
                 }
                 $("#" + _modal).modal("show");
             }, "json");
@@ -147,8 +148,8 @@ main.js.php
                 type: "post",
                 url: "<?php echo base_url('student/ajax_save/') ?>" + _key,
                 data: $("#" + _form).serialize(),
+                dataType: "json",
                 success: function(response) {
-                    var response = JSON.parse(response);
                     if (response.status === true) {
                         resetForm();
                         $("#" + _modal).modal("hide");
@@ -223,12 +224,14 @@ main.js.php
                         html += '<tr>' +
                             '<td>' + (i+1) + '</td>' +
                             '<td>' + item.class_name + ' (' + (item.school_name || '-') + ')</td>' +
-                            '<td><button class="btn btn-sm btn-danger remove-class" data-id="' + item.id + '">Hapus</button></td>' +
+                            '<td><button class="btn btn-sm btn-danger remove-class" data-student-id="' + studentId + '" data-class-id="' + item.class_id + '">Hapus</button></td>' +
                             '</tr>';
                     });
                 }
                 $("#student-class-list tbody").html(html);
-            }, "json");
+            }, "json").fail(function() {
+                notify("Gagal memuat kelas siswa.", "danger");
+            });
         }
 
         // Load kelas yang tersedia (belum diikuti)
@@ -242,7 +245,9 @@ main.js.php
                     placeholder: "Pilih kelas...",
                     allowClear: true
                 });
-            }, "json");
+            }, "json").fail(function() {
+                notify("Gagal memuat daftar kelas.", "danger");
+            });
         }
 
         // Tambah kelas ke siswa
@@ -256,9 +261,11 @@ main.js.php
             $.ajax({
                 url: "<?= base_url('student/ajax_add_class') ?>",
                 type: "post",
+                dataType: "json",
                 data: {
                     student_id: currentStudentId,
-                    class_id: classId
+                    class_id: classId,
+                    "<?= $this->security->get_csrf_token_name() ?>": "<?= $this->security->get_csrf_hash() ?>"
                 },
                 success: function(res) {
                     if (res.status) {
@@ -274,7 +281,8 @@ main.js.php
 
         // Hapus kelas dari siswa
         $(document).on("click", ".remove-class", function() {
-            var id = $(this).data("id");
+            var studentId = $(this).data("student-id");
+            var classId = $(this).data("class-id");
             swal({
                 title: "Hapus kelas ini?",
                 text: "Siswa tidak akan bisa mengakses kelas dan konten terkait.",
@@ -287,9 +295,12 @@ main.js.php
             }).then((result) => {
                 if (result.value) {
                     $.ajax({
-                        url: "<?= base_url('student/ajax_remove_class/') ?>" + id,
+                        url: "<?= base_url('student/ajax_remove_class/') ?>" + studentId + "/" + classId,
                         type: "post",
                         dataType: "json",
+                        data: {
+                            "<?= $this->security->get_csrf_token_name() ?>": "<?= $this->security->get_csrf_hash() ?>"
+                        },
                         success: function(res) {
                             if (res.status) {
                                 loadStudentClasses(currentStudentId);
@@ -305,13 +316,57 @@ main.js.php
         });
 
         // ============================================================
+        // Import Excel
+        // ============================================================
+        $("#btn-import-excel").on("click", function() {
+            $("#modal-import-student").modal("show");
+        });
+
+        $("#btn-do-import").on("click", function() {
+            var fileInput = $("#import_file")[0];
+            if (!fileInput.files.length) {
+                notify("Pilih file Excel terlebih dahulu.", "danger");
+                return;
+            }
+            var formData = new FormData();
+            formData.append("import_file", fileInput.files[0]);
+            formData.append("<?= $this->security->get_csrf_token_name() ?>", "<?= $this->security->get_csrf_hash() ?>");
+            var $btn = $(this);
+            $btn.prop("disabled", true).text("Mengimpor...");
+            $.ajax({
+                url: "<?= base_url('student/import_from_excel') ?>",
+                type: "post",
+                data: formData,
+                processData: false,
+                contentType: false,
+                dataType: "json",
+                success: function(res) {
+                    $btn.prop("disabled", false).text("Import");
+                    if (res.status) {
+                        $("#modal-import-student").modal("hide");
+                        $("#import_file").val("");
+                        $("#" + _table).DataTable().ajax.reload(null, false);
+                        notify(res.data, "success");
+                    } else {
+                        notify(res.data, "danger");
+                    }
+                },
+                error: function() {
+                    $btn.prop("disabled", false).text("Import");
+                    notify("Gagal mengimpor file.", "danger");
+                }
+            });
+        });
+
+        // ============================================================
         // Reset form
         // ============================================================
-        resetForm = () => {
+        function resetForm() {
             _key = "";
             $("#" + _form).trigger("reset");
             $("#" + _form + " .student-is_active").prop('checked', true);
-        };
+            $("#" + _form + " .student-password").val('');
+        }
 
         // ============================================================
         // Notifikasi
