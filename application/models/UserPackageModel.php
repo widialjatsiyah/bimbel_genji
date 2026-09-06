@@ -56,18 +56,23 @@ class UserPackageModel extends CI_Model
 		return $this->db->get($this->_table)->row();
 	}
 
-	public function insert()
+	public function insert($data = null)
 	{
 		$response = array('status' => false, 'data' => 'No operation.');
 		try {
-			$this->user_id = $this->input->post('user_id');
-			$this->package_id = $this->input->post('package_id');
-			$this->start_date = $this->input->post('start_date');
-			$this->end_date = $this->input->post('end_date');
-			$this->status = $this->input->post('status');
-			$this->payment_status = $this->input->post('payment_status');
-			$this->created_at = date('Y-m-d H:i:s');
-			$this->db->insert($this->_table, $this);
+			if (is_null($data)) {
+				$data = array(
+					'user_id' => $this->input->post('user_id'),
+					'package_id' => $this->input->post('package_id'),
+					'start_date' => $this->input->post('start_date'),
+					'end_date' => $this->input->post('end_date'),
+					'status' => $this->input->post('status'),
+					'payment_status' => $this->input->post('payment_status'),
+				);
+			}
+			if (!$this->db->insert($this->_table, $data)) {
+				return array('status' => false, 'data' => 'Gagal menyimpan data paket pengguna.');
+			}
 			$response = array('status' => true, 'data' => 'Data paket pengguna berhasil disimpan.');
 		} catch (\Throwable $th) {
 			$response = array('status' => false, 'data' => 'Gagal menyimpan data: ' . $th->getMessage());
@@ -79,13 +84,17 @@ class UserPackageModel extends CI_Model
 	{
 		$response = array('status' => false, 'data' => 'No operation.');
 		try {
-			$this->user_id = $this->input->post('user_id');
-			$this->package_id = $this->input->post('package_id');
-			$this->start_date = $this->input->post('start_date');
-			$this->end_date = $this->input->post('end_date');
-			$this->status = $this->input->post('status');
-			$this->payment_status = $this->input->post('payment_status');
-			$this->db->update($this->_table, $this, array('id' => $id));
+			$data = array(
+				'user_id' => $this->input->post('user_id'),
+				'package_id' => $this->input->post('package_id'),
+				'start_date' => $this->input->post('start_date'),
+				'end_date' => $this->input->post('end_date'),
+				'status' => $this->input->post('status'),
+				'payment_status' => $this->input->post('payment_status'),
+			);
+			if (!$this->db->where('id', $id)->update($this->_table, $data)) {
+				return array('status' => false, 'data' => 'Gagal memperbarui data paket pengguna.');
+			}
 			$response = array('status' => true, 'data' => 'Data paket pengguna berhasil diperbarui.');
 		} catch (\Throwable $th) {
 			$response = array('status' => false, 'data' => 'Gagal memperbarui data: ' . $th->getMessage());

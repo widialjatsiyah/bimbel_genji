@@ -37,7 +37,10 @@ class My_payment extends AppBackend
 				'transactions.created_at',
 				'transactions.transaction_status',
 				'transactions.gross_amount',
-				'packages.price'
+				'packages.price',
+				'transactions.payment_type',
+				'transactions.manual_proof',
+				'transactions.manual_verification_status'
 			],
 			'table_name' => 'transactions',
 			'table_join' => [
@@ -47,13 +50,13 @@ class My_payment extends AppBackend
 					'type' => 'left'
 				]
 			],
-			'order_column' => 3,
+			'order_column' => 4,
 			'order_column_dir' => 'desc',
 		];
 
 		// Tambahkan conditional jika bukan administrator
 		if ($this->session->userdata('user')['role'] == 'student') {
-			$dtAjax_config['static_conditional'] = [
+			$dtAjax_config['static_conditional_spec'] = [
 				'transactions.user_id' => $user_id
 			];
 		}

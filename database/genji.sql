@@ -596,14 +596,21 @@ CREATE TABLE IF NOT EXISTS `transactions` (
   `transaction_status` enum('pending','settlement','capture','deny','cancel','expire') DEFAULT 'pending',
   `snap_token` text,
   `midtrans_response` json DEFAULT NULL,
+  `manual_proof` varchar(255) DEFAULT NULL,
+  `manual_note` text DEFAULT NULL,
+  `manual_verification_status` enum('pending','approved','rejected') DEFAULT NULL,
+  `manual_verified_by` int DEFAULT NULL,
+  `manual_verified_at` datetime DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `order_id` (`order_id`),
   KEY `user_id` (`user_id`),
   KEY `package_id` (`package_id`),
+  KEY `manual_verified_by` (`manual_verified_by`),
   CONSTRAINT `transactions_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `transactions_ibfk_2` FOREIGN KEY (`package_id`) REFERENCES `packages` (`id`) ON DELETE SET NULL
+  CONSTRAINT `transactions_ibfk_2` FOREIGN KEY (`package_id`) REFERENCES `packages` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `transactions_manual_verified_by_fk` FOREIGN KEY (`manual_verified_by`) REFERENCES `user` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE IF NOT EXISTS `tryouts` (
