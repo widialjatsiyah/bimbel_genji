@@ -33,7 +33,7 @@
                         </div>
                         <div class="modal-body">
                             <div class="alert alert-info">
-                                <small>Format kolom: <b>A</b>=Nama Lengkap, <b>B</b>=Email, <b>C</b>=Username, <b>D</b>=Password (default 123456 jika kosong), <b>E</b>=Sekolah/Unit, <b>F</b>=Sub Sekolah, <b>G</b>=Aktif (1/0). Baris 1 header.</small>
+                                <small>Format kolom: <b>A</b>=Nama Lengkap, <b>B</b>=Email, <b>C</b>=Username, <b>D</b>=Password (default 123456 jika kosong), <b>E</b>=Sekolah/Unit (opsional), <b>F</b>=Sub Sekolah (opsional), <b>G</b>=Aktif (1/0), <b>H</b>=NIS, <b>I</b>=Asal Sekolah, <b>J</b>=Nama Orang Tua, <b>K</b>=Kontak Orang Tua. Baris 1 header. Detail siswa otomatis dibuat memakai user_id hasil import.</small>
                             </div>
                             <div class="form-group">
                                 <label>Pilih File Excel (.xlsx/.xls)</label>

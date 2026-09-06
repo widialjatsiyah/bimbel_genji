@@ -12,7 +12,7 @@ class Student extends AppBackend
         if (!in_array($role, ['Administrator', 'school_admin'])) {
             // show_error('Akses ditolak', 403);
         }
-        $this->load->model(['UserModel', 'StudentClassModel', 'ClassModel','SchoolModel','AppModel', 'SubunitModel']);
+        $this->load->model(['UserModel', 'StudentDetailModel', 'StudentClassModel', 'ClassModel','SchoolModel','AppModel', 'SubunitModel']);
     }
 
     public function index()
@@ -404,6 +404,10 @@ class Student extends AppBackend
                 $unit = trim($worksheet->getCell('E' . $row)->getValue());
                 $sub_unit = trim($worksheet->getCell('F' . $row)->getValue());
                 $is_active = trim($worksheet->getCell('G' . $row)->getValue());
+                $nis = trim((string) $worksheet->getCell('H' . $row)->getFormattedValue());
+                $asal_sekolah = trim((string) $worksheet->getCell('I' . $row)->getFormattedValue());
+                $nama_orang_tua = trim((string) $worksheet->getCell('J' . $row)->getFormattedValue());
+                $kontak_orang_tua = trim((string) $worksheet->getCell('K' . $row)->getFormattedValue());
                 
                 if (empty($nama_lengkap) || empty($email) || empty($username)) {
                     $failed_count++;
@@ -473,6 +477,22 @@ class Student extends AppBackend
                 ];
                 
                 if ($this->db->insert('user', $user_data)) {
+                    $user_id = $this->db->insert_id();
+                    $detail_saved = $this->db->insert('student_details', [
+                        'user_id' => $user_id,
+                        'nis' => $nis !== '' ? $nis : null,
+                        'asal_sekolah' => $asal_sekolah !== '' ? $asal_sekolah : null,
+                        'nama_orang_tua' => $nama_orang_tua !== '' ? $nama_orang_tua : null,
+                        'kontak_orang_tua' => $kontak_orang_tua !== '' ? $kontak_orang_tua : null,
+                    ]);
+
+                    if (!$detail_saved) {
+                        // Do not leave an orphan user when the detail row fails.
+                        $this->db->where('id', $user_id)->delete('user');
+                        $failed_count++;
+                        $errors[] = "Baris " . $row . ": Gagal menyimpan detail siswa";
+                        continue;
+                    }
                     $imported_count++;
                 } else {
                     $failed_count++;
@@ -516,9 +536,13 @@ class Student extends AppBackend
             'B1' => 'Email',
             'C1' => 'Username',
             'D1' => 'Password',
-            'E1' => 'Sekolah (Unit)',
-            'F1' => 'Sub Sekolah',
+            'E1' => 'Sekolah (Unit) - Opsional',
+            'F1' => 'Sub Sekolah - Opsional',
             'G1' => 'Aktif (1/0)',
+            'H1' => 'NIS',
+            'I1' => 'Asal Sekolah',
+            'J1' => 'Nama Orang Tua',
+            'K1' => 'Kontak Orang Tua',
         ];
         
         foreach ($headers as $cell => $value) {
@@ -529,16 +553,20 @@ class Student extends AppBackend
             'font' => ['bold' => true, 'size' => 12],
             'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E6E6FA']]
         ];
-        $sheet->getStyle('A1:G1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:K1')->applyFromArray($headerStyle);
         
         $sampleData = [
             'A2' => 'Budi Santoso',
             'B2' => 'budi@example.com',
             'C2' => 'budisantoso',
             'D2' => '123456',
-            'E2' => 'SMA Negeri 1',
-            'F2' => 'IPA',
+            'E2' => '',
+            'F2' => '',
             'G2' => '1',
+            'H2' => '123456',
+            'I2' => 'SMA Negeri 1',
+            'J2' => 'Nama Orang Tua',
+            'K2' => '08123456789',
         ];
         foreach ($sampleData as $cell => $value) {
             $sheet->setCellValue($cell, $value);
@@ -551,6 +579,10 @@ class Student extends AppBackend
         $sheet->getColumnDimension('E')->setWidth(20);
         $sheet->getColumnDimension('F')->setWidth(20);
         $sheet->getColumnDimension('G')->setWidth(15);
+        $sheet->getColumnDimension('H')->setWidth(15);
+        $sheet->getColumnDimension('I')->setWidth(25);
+        $sheet->getColumnDimension('J')->setWidth(25);
+        $sheet->getColumnDimension('K')->setWidth(20);
         
         $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
