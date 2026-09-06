@@ -6,6 +6,7 @@
 		var _table = "table-package";
 		var _modal = "modal-form-package";
 		var _form = "form-package";
+		var _importPackageId = null;
 
 		// Initialize DataTables
 		if ($("#" + _table)[0]) {
@@ -59,11 +60,21 @@
 					{
 						data: null,
 						render: function(data, type, row, meta) {
+							var packageName = $('<div>').text(row.name).html();
 							return '<div class="action">' +
-							'<a href="javascript:;" class="btn btn-sm btn-light btn-table-action action-edit" data-toggle="modal" data-target="#' + _modal + '"><i class="zmdi zmdi-edit"></i> Ubah</a>&nbsp;' +
-								'<a href="<?= base_url('package/detail/') ?>' + row.id + '" class="btn btn-sm btn-info"><i class="zmdi zmdi-view-list"></i> Item</a>&nbsp;' +
-								'<a href="javascript:;" class="btn btn-sm btn-danger btn-table-action action-delete"><i class="zmdi zmdi-delete"></i> Hapus</a>' +
-								'</div>'
+								'<a href="javascript:;" class="btn btn-sm btn-success action-import-user mr-1" data-id="' + row.id + '" data-name="' + packageName + '"><i class="zmdi zmdi-upload"></i> Import</a>' +
+								'<div class="dropdown d-inline-block">' +
+									'<button class="btn btn-sm btn-dark dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">' +
+										'<i class="zmdi zmdi-settings"></i> Aksi' +
+									'</button>' +
+									'<div class="dropdown-menu dropdown-menu-right">' +
+										'<a href="<?= base_url('package/detail/') ?>' + row.id + '" class="dropdown-item"><i class="zmdi zmdi-view-list"></i> Item</a>' +
+										'<a href="javascript:;" class="dropdown-item action-edit" data-toggle="modal" data-target="#' + _modal + '"><i class="zmdi zmdi-edit"></i> Ubah</a>' +
+										'<div class="dropdown-divider"></div>' +
+										'<a href="javascript:;" class="dropdown-item text-danger action-delete"><i class="zmdi zmdi-delete"></i> Hapus</a>' +
+									'</div>' +
+								'</div>' +
+							'</div>';
 						},
 						className: "center",
 
@@ -145,6 +156,55 @@
 		$("#" + _section).on("click", "button." + _section + "-action-add", function(e) {
 			e.preventDefault();
 			resetForm();
+		});
+
+		$("#" + _table).on("click", ".action-import-user", function(e) {
+			e.preventDefault();
+			_importPackageId = $(this).data("id");
+			$("#import-package-name").text($(this).data("name"));
+			$("#package-import-file").val('');
+			$("#modal-import-user-package").modal('show');
+		});
+
+		$("#package-download-template").on("click", function() {
+			if (_importPackageId) {
+				window.location.href = "<?= base_url('package/download_user_package_template/') ?>" + _importPackageId;
+			}
+		});
+
+		$("#package-do-import").on("click", function() {
+			var fileInput = $("#package-import-file")[0];
+			if (!_importPackageId || !fileInput.files.length) {
+				notify('Pilih paket dan file Excel terlebih dahulu.', 'danger');
+				return;
+			}
+			var formData = new FormData();
+			formData.append('import_file', fileInput.files[0]);
+			formData.append("<?= $this->security->get_csrf_token_name() ?>", "<?= $this->security->get_csrf_hash() ?>");
+			var $button = $(this);
+			$button.prop('disabled', true).text('Mengimpor...');
+			$.ajax({
+				url: "<?= base_url('package/import_users_from_excel/') ?>" + _importPackageId,
+				type: 'post',
+				data: formData,
+				processData: false,
+				contentType: false,
+				dataType: 'json',
+				success: function(response) {
+					if (response.status) {
+						$("#modal-import-user-package").modal('hide');
+						notify(response.data, 'success');
+					} else {
+						notify(response.data, 'danger');
+					}
+				},
+				error: function() {
+					notify('Gagal memproses file Excel.', 'danger');
+				},
+				complete: function() {
+					$button.prop('disabled', false).text('Import');
+				}
+			});
 		});
 
 		// Handle edit

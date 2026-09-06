@@ -40,11 +40,12 @@ class StudentClassModel extends CI_Model
     {
         $data = [
             'student_id' => $student_id,
-            'class_id' => $class_id,
-            'joined_at' => date('Y-m-d H:i:s')
+            'class_id' => $class_id
         ];
-        $this->db->insert($this->_table, $data);
-        return $this->db->insert_id();
+        if (!$this->db->insert($this->_table, $data)) {
+            return false;
+        }
+        return true;
     }
 
     /**
