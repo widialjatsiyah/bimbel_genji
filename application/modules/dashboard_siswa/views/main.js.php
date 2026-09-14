@@ -84,4 +84,34 @@ $(document).ready(function() {
             });
         });
     });
+
+	
+$(document).ready(function() {
+    if (typeof $.fn.DataTable !== 'undefined' && $('#table-history').length) {
+        $('#table-history').DataTable({
+            responsive: true,
+            pageLength: 10,
+            lengthMenu: [5, 10, 20, 50],
+            order: [[0, 'asc']],
+            language: { searchPlaceholder: 'Cari...' }
+        });
+    }
+
+    // Countdown timer untuk sesi berjalan
+    // function updateTimers() {
+    //     $('.time-left').each(function() {
+    //         var left = parseInt($(this).data('timeleft'));
+    //         if (left > 0) {
+    //             var hrs = Math.floor(left / 3600),
+    //                 mins = Math.floor((left % 3600) / 60),
+    //                 secs = left % 60;
+    //             $('#time-' + $(this).data('id')).text(hrs + 'h ' + mins + 'm ' + secs + 's');
+    //             $(this).data('timeleft', left - 1);
+    //         } else {
+    //             $('#time-' + $(this).data('id')).text('0s');
+    //         }
+    //     });
+    // }
+    // setInterval(updateTimers, 1000);
+});
 </script>
