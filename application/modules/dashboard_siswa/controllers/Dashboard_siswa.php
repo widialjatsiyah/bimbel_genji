@@ -33,7 +33,7 @@ class Dashboard_siswa extends AppBackend
             'latest_tryout' => $this->UserTryoutModel->getLatestByUser($user_id),
             'progress' => $this->StudentProgressModel->getLatest($user_id),
             'recommendations' => $this->RecommendationModel->getUnreadByUser($user_id, 5),
-            'available_tryouts' => $this->TryoutModel->getAvailableForUser($user_id),
+            'available_tryouts' => $this->TryoutModel->getAvailableForStudent($user_id),
             'material_progress' => $this->UserMaterialProgressModel->countProgress($user_id),
             'daily_checklist_today' => $this->DailyChecklistModel->getToday($user_id),
             'recent_activities' => $this->UserTryoutModel->getRecentActivities($user_id, 5),
