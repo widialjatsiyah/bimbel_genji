@@ -491,6 +491,80 @@ class UserTryoutModel extends CI_Model
         return false;
     }
 
+    public function getOverallRanking()
+    {
+        // Peringkat berdasarkan skor tertinggi per siswa
+        return $this->db->select('u.id as user_id, u.nama_lengkap, COUNT(ut.id) as tryout_count, MAX(ut.total_score) as best_score')
+            ->from('user_tryouts ut')
+            ->join('user u', 'u.id = ut.user_id')
+            ->where('ut.status', 'completed')
+            ->group_by('ut.user_id')
+            ->order_by('best_score', 'desc')
+            ->order_by('tryout_count', 'desc')
+            ->get()
+            ->result();
+    }
+
+    public function getActivePackageTryoutIds($user_id)
+    {
+        return $this->db->select('pi.item_id')
+            ->from('package_items pi')
+            ->join('user_packages up', 'up.package_id = pi.package_id')
+            ->where('up.user_id', $user_id)
+            ->where('up.status', 'active')
+            ->where('up.end_date >=', date('Y-m-d'))
+            ->where('pi.item_type', 'tryout')
+            ->get()
+            ->result_array();
+    }
+
+    public function getActiveSessionsByTryoutIds($tryout_ids)
+    {
+        if (empty($tryout_ids)) return [];
+        return $this->db->select('ts.id as session_id, ts.name as session_name, ts.session_order, ts.tryout_id, t.title as tryout_title')
+            ->from('tryout_sessions ts')
+            ->join('tryouts t', 't.id = ts.tryout_id')
+            ->where_in('ts.tryout_id', $tryout_ids)
+            ->where('t.is_published', 1)
+            ->order_by('ts.tryout_id', 'asc')
+            ->order_by('ts.session_order', 'asc')
+            ->get()
+            ->result();
+    }
+
+    public function getSessionParticipants($session_id)
+    {
+        return $this->db->select('ut.user_id, u.nama_lengkap, MAX(ut.total_score) as best_score, COUNT(ut.id) as attempt_count')
+            ->from('user_tryouts ut')
+            ->join('user u', 'u.id = ut.user_id')
+            ->where('ut.tryout_session_id', $session_id)
+            ->where('ut.status', 'completed')
+            ->group_by('ut.user_id')
+            ->order_by('best_score', 'desc')
+            ->get()
+            ->result();
+    }
+
+    public function getUserRankInSession($session_id, $user_id)
+    {
+        $result = $this->db->select('u.id as user_id')
+            ->from('user_tryouts ut')
+            ->join('user u', 'u.id = ut.user_id')
+            ->where('ut.tryout_session_id', $session_id)
+            ->where('ut.status', 'completed')
+            ->group_by('ut.user_id')
+            ->order_by('MAX(ut.total_score)', 'desc')
+            ->get()
+            ->result();
+
+        foreach ($result as $i => $r) {
+            if ((int)$r->user_id === (int)$user_id) {
+                return $i + 1;
+            }
+        }
+        return null;
+    }
+
     /**
      * Complete session when time has expired
      */
