@@ -105,6 +105,7 @@ class PackageModel extends CI_Model
 
     function clean_number($number)
     {
-        return preg_replace('/[^0-9.]/', '', $number);
+        // Remove thousand separators (dot) and any commas, keep only digits
+        return preg_replace('/[.,]/', '', $number);
     }
 }
