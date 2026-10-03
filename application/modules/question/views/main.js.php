@@ -357,15 +357,18 @@
 						}
 					},
 					{
+						searchable: false,
 						data: "subject_name",
 					},
 					{
+						searchable: false,
 						data: "chapter_name",
 						render: function(data) {
 							return data ? data : '-';
 						}
 					},
 					{
+						searchable: false,
 						data: "topic_name",
 						render: function(data) {
 							return data ? data : '-';
