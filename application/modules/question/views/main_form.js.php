@@ -7,26 +7,7 @@
 		// Define base_url for AJAX requests
 		var base_url = '<?php echo base_url(); ?>';
 
-		// Function to clean LaTeX content from unwanted HTML formatting
-		function cleanLatexContent(content) {
-			if (!content) return content;
 
-			// 1. Decode entitas HTML terlebih dahulu
-			content = content.replace(/&amp;/g, '&')
-				.replace(/&nbsp;/g, ' ')
-				.replace(/&lt;/g, '<')
-				.replace(/&gt;/g, '>')
-				.replace(/&quot;/g, '"')
-				.replace(/&#39;/g, "'");
-
-			// 2. Hapus tag HTML (termasuk <p>, </p>, dll)
-			content = content.replace(/<[^>]*>/g, '');
-
-			// 3. (Opsional) Hapus spasi berlebih atau baris kosong
-			content = content.replace(/\n\s*\n/g, '\n').trim();
-
-			return content;
-		}
 		// Fungsi untuk menangani preview gambar
 		function previewImage(input, previewContainer) {
 			if (input.files && input.files[0]) {
@@ -147,9 +128,8 @@
 
 								// Update TinyMCE jika ada
 								if (typeof tinymce !== 'undefined' && tinymce.get('question_text')) {
-									// Clean the content before setting it
-									var cleanedContent = cleanLatexContent(data.question_text);
-									tinymce.get('question_text').setContent(cleanedContent);
+									// Set content raw (HTML + LaTeX tersimpan di DB) agar format tidak hilang
+									tinymce.get('question_text').setContent(data.question_text);
 
 									// Force MathJax to render the content
 									setTimeout(function() {
@@ -175,19 +155,19 @@
 									// Set gambar pilihan A jika ada
 									handleOptionImage('a', data.option_a_image);
 
-									$('.question-option_b').val(cleanLatexContent(data.option_b));
+									$('.question-option_b').val(data.option_b);
 									// Set gambar pilihan B jika ada
 									handleOptionImage('b', data.option_b_image);
 
-									$('.question-option_c').val(cleanLatexContent(data.option_c));
+									$('.question-option_c').val(data.option_c);
 									// Set gambar pilihan C jika ada
 									handleOptionImage('c', data.option_c_image);
 
-									$('.question-option_d').val(cleanLatexContent(data.option_d));
+									$('.question-option_d').val(data.option_d);
 									// Set gambar pilihan D jika ada
 									handleOptionImage('d', data.option_d_image);
 
-									$('.question-option_e').val(cleanLatexContent(data.option_e));
+									$('.question-option_e').val(data.option_e);
 									// Set gambar pilihan E jika ada
 									handleOptionImage('e', data.option_e_image);
 
@@ -204,12 +184,11 @@
 								}
 
 								// Update TinyMCE explanation jika ada
-								if (typeof tinymce !== 'undefined' && tinymce.get('explanation')) {
-									// Clean the content before setting it
-									var cleanedExplanation = cleanLatexContent(data.explanation);
-									tinymce.get('explanation').setContent(cleanedExplanation);
+												if (typeof tinymce !== 'undefined' && tinymce.get('explanation')) {
+													// Set content raw (HTML + LaTeX tersimpan di DB) agar format tidak hilang
+													tinymce.get('explanation').setContent(data.explanation);
 
-									// Force MathJax to render the content
+													// Force MathJax to render the content
 									setTimeout(function() {
 										if (window.MathJax && typeof window.MathJax.typeset === 'function') {
 											MathJax.typeset(['#explanation']);
@@ -523,17 +502,6 @@
 
 			// Jika menggunakan TinyMCE, pastikan konten disimpan ke textarea sebelum submit
 			if (typeof tinymce !== 'undefined' && tinymce.editors.length > 0) {
-				tinymce.triggerSave();
-			}
-
-			// Clean the content before saving
-			if (typeof tinymce !== 'undefined' && tinymce.editors.length > 0) {
-				for (var i = 0; i < tinymce.editors.length; i++) {
-					var editor = tinymce.editors[i];
-					var content = editor.getContent();
-					var cleanedContent = cleanLatexContent(content);
-					editor.setContent(cleanedContent);
-				}
 				tinymce.triggerSave();
 			}
 

@@ -60,8 +60,12 @@ function cleanLatexContent(content) {
         return '{LATEX_PLACEHOLDER_' + placeholderIndex++ + '}';
     });
     
-    // Remove all HTML tags
-    content = content.replace(/<[^>]*>/g, '');
+    // Remove paragraph and break tags around placeholders, plus surrounding whitespace
+    content = content.replace(/<p[^>]*>\s*({LATEX_PLACEHOLDER_\d+})\s*<\/p>/gi, '$1');
+    content = content.replace(/<br\s*\/?>\s*({LATEX_PLACEHOLDER_\d+})/gi, '$1');
+    content = content.replace(/({LATEX_PLACEHOLDER_\d+})\s*<br\s*\/?>/gi, '$1');
+    content = content.replace(/<p[^>]*>\s*({LATEX_PLACEHOLDER_\d+})/gi, '$1');
+    content = content.replace(/({LATEX_PLACEHOLDER_\d+})\s*<\/p>/gi, '$1');
     
     // Replace placeholders back with original LaTeX content
     for (var i = 0; i < latexPlaceholders.length; i++) {
