@@ -351,6 +351,9 @@
 	<!-- MathJax for LaTeX Support -->
 	<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
 	<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+	<!-- TinyMCE WYSIWYG + LaTeX (paket sama dengan form soal admin) -->
+	<script src="<?= base_url('themes/sb_admin/vendors/tinymce/tinymce.min.js') ?>"></script>
+	<script src="<?= base_url('themes/_public/js/tinymce-latex-config.js') ?>"></script>
 	<script>
 		// MathJax Configuration
 		window.MathJax = {
@@ -556,9 +559,41 @@
 						</div>
 					`;
 				}
+				// Buang instance TinyMCE esai sebelumnya sebelum container diganti (cegah editor orphan).
+				if (typeof tinymce !== 'undefined') {
+					try { tinymce.remove('.essay-tinymce'); } catch (e) {}
+				}
 				$('#options-container').html(optionsHtml);
 
-				// Force MathJax to typeset the options content after it's inserted
+				// WYSIWYG hanya untuk textarea jawaban esai (TinyMCE + LaTeX).
+				// Tampilan soal (#question-text) tetap HTML biasa + MathJax, tidak diganggu.
+				if (questionData.question_type === 'essay' && typeof initializeTinyMCEWithLatex === 'function') {
+					(function() {
+						var essayQid = questions[currentIndex].question_id;
+						var essaySel = '#essay-answer-' + essayQid;
+						$(essaySel).addClass('essay-tinymce');
+						setTimeout(function() {
+							if (typeof tinymce === 'undefined' || tinymce.get(essaySel.substring(1))) {
+								return;
+							}
+							initializeTinyMCEWithLatex(essaySel, { height: 200 });
+							var tries = 0;
+							var iv = setInterval(function() {
+								var ed = tinymce.get(essaySel.substring(1));
+								if (ed) {
+									clearInterval(iv);
+									ed.on('Change KeyUp', function() {
+										saveEssayAnswer(ed.getContent(), essayQid);
+									});
+								} else if (++tries > 20) {
+									clearInterval(iv);
+								}
+							}, 250);
+						}, 100);
+					})();
+				}
+
+					// Force MathJax to typeset the options content after it's inserted
 				setTimeout(function() {
 					if (window.MathJax && typeof window.MathJax.typeset === 'function') {
 						MathJax.typeset(['#options-container']);
@@ -712,12 +747,8 @@
 				updateGrid();
 			}
 
-			// Event handler untuk textarea essay - autosave saat user mengetik
-			$(document).on('input propertychange paste', '[id^="essay-answer-"]', function() {
-				var questionId = $(this).attr('id').replace('essay-answer-', '');
-				var answerText = $(this).val();
-
-				// Kirim jawaban ke server
+			// Simpan jawaban esai (dipakai textarea biasa maupun editor TinyMCE).
+			function saveEssayAnswer(answerText, questionId) {
 				$.ajax({
 					url: '<?= base_url("user_tryout/ajax_save_essay_answer") ?>',
 					method: 'POST',
@@ -743,6 +774,16 @@
 						// Tidak menampilkan error karena ini hanya autosave
 					}
 				});
+			}
+
+			// Event handler untuk textarea essay - autosave saat user mengetik
+			$(document).on('input propertychange paste', '[id^="essay-answer-"]', function() {
+				// Lewati jika textarea sudah diganti TinyMCE (TinyMCE sembunyikan textarea asli).
+				if (typeof tinymce !== 'undefined' && tinymce.get($(this).attr('id'))) {
+					return;
+				}
+				var questionId = $(this).attr('id').replace('essay-answer-', '');
+				saveEssayAnswer($(this).val(), questionId);
 			});
 
 			// Event klik option - gunakan event delegation karena elemen dibuat secara dinamis
