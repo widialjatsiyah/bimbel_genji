@@ -43,8 +43,8 @@ class User_package extends AppBackend
         $dtAjax_config = array(
             'select_column' => [
                 'user_packages.id',
-                'user.nama_lengkap as user_name',
-                'packages.name as package_name',
+                'user.nama_lengkap as nama_lengkap',
+                'packages.name as name',
                 'user_packages.start_date',
                 'user_packages.end_date',
                 'user_packages.status',
