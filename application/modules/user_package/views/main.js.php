@@ -25,10 +25,10 @@
                         }
                     },
                     {
-                        data: "user_name",
+                        data: "nama_lengkap",
                     },
                     {
-                        data: "package_name",
+                        data: "name",
                     },
                     {
                         data: "start_date",
