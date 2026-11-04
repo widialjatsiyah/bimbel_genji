@@ -23,7 +23,7 @@ class Material extends AppBackend
 
 		$data = array(
 			'app' => $this->app(),
-			'main_js' => $this->load_main_js('material'),
+			'main_js' => $this->load_main_js('material',false, array('user_role' => $this->session->userdata('user')['role'])),
 			'card_title' => 'Materi Belajar',
 			'list_subject' => $this->init_list($subjects, 'id', 'name'),
 			'list_chapter' => $this->init_list($chapters, 'id', 'name')
