@@ -6,6 +6,7 @@
 		var _table = "table-material";
 		var _modal = "modal-form-material";
 		var _form = "form-material";
+		var user_role = "<?php echo $this->session->userdata('user')['role'] ?>";
 
 		// Initialize DataTables
 		if ($("#" + _table)[0]) {
